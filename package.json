@@ -1,0 +1,13 @@
+{
+  "name": "algebra-retake-generator",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "gen": "bun run src/cli.ts gen",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5"
+  }
+}
