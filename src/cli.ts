@@ -62,9 +62,14 @@ function list(raw: string | undefined): string[] {
   return (raw ?? "").split(",").map((s) => s.trim()).filter(Boolean);
 }
 
-function emit(session: Session, slug: string, args: Args): void {
+function emit(
+  session: Session,
+  slug: string,
+  args: Args,
+  recall?: ReadonlySet<number>,
+): void {
   const set = renderSet(session);
-  const key = renderKey(session);
+  const key = renderKey(session, { recall });
   process.stdout.write(set + "\n" + key);
 
   if (args.bare.has("no-write")) return;
@@ -134,7 +139,7 @@ function main(): void {
         missed: fromLog ? loadMisses() : undefined,
       });
 
-      emit(result.session, "session", args);
+      emit(result.session, "session", args, result.recalled);
       const used = [...new Set(result.session.items.map((i) => i.standard))];
       process.stderr.write(
         `${result.session.items.length} items verified, ${result.rejected} rejected\n` +

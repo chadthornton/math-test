@@ -185,3 +185,111 @@ describe("parseLog", () => {
     expect(parseLog("# just a heading\n")).toEqual([]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// exact-item spaced recall: the sixth log field
+// ---------------------------------------------------------------------------
+
+describe("recall by seed", () => {
+  const withSeed = (seed: number, standard = "7.NS.A.1") =>
+    [
+      LOG_MARKER,
+      `Aug 4 | ${standard} | whatever | wrong thing | wrong | ${seed}`,
+    ].join("\n");
+
+  test("the sixth field is read as a seed, not as part of the outcome", () => {
+    const entry = parseLog(withSeed(3277083196))[0]!;
+    expect(entry.seed).toBe(3277083196);
+    expect(entry.outcome).toBe("wrong");
+  });
+
+  test("an entry with no seed still parses", () => {
+    const entry = parseLog(
+      `${LOG_MARKER}\nAug 4 | 7.NS.A.1 | -4 + 11 | 7 | wrong, sign`,
+    )[0]!;
+    expect(entry.seed).toBeUndefined();
+    expect(entry.outcome).toBe("wrong, sign");
+  });
+
+  test("a number inside the outcome is not mistaken for a seed", () => {
+    const entry = parseLog(
+      `${LOG_MARKER}\nAug 4 | 5.NBT.B.5 | 47 x 8 | 376 | correct but 50s, wrong earlier`,
+    )[0]!;
+    expect(entry.seed).toBeUndefined();
+  });
+
+  test("a logged seed rebuilds that exact item in a later session", () => {
+    // Take a real item out of one session...
+    const source = build({ seed: 3, count: 12 }).session.items.find(
+      (i) => i.standard === "7.NS.A.1",
+    )!;
+
+    // ...and ask for a completely different session that knows only its seed.
+    const later = build({
+      seed: 999,
+      date: "2026-08-05",
+      count: 12,
+      missed: parseLog(withSeed(source.seed)),
+    });
+
+    const rebuilt = later.session.items.find((i) => i.seed === source.seed);
+    expect(rebuilt).toBeDefined();
+    expect(rebuilt!.prompt).toBe(source.prompt);
+    expect(rebuilt!.solution).toBe(source.solution);
+    expect(later.recalled.has(source.seed)).toBe(true);
+  });
+
+  test("the key marks a rebuilt item as spaced recall", () => {
+    const source = build({ seed: 3, count: 12 }).session.items[0]!;
+    const later = build({
+      seed: 999,
+      count: 12,
+      missed: parseLog(withSeed(source.seed, source.standard)),
+    });
+    const key = renderKey(later.session, { recall: later.recalled });
+    expect(key).toContain("spaced recall");
+    expect(renderKey(later.session)).not.toContain("spaced recall");
+  });
+
+  test("recall still meets the >= 2 rule when only one seed was logged", () => {
+    const source = build({ seed: 3, count: 12 }).session.items.find(
+      (i) => i.standard === "8.EE.A.2",
+    )!;
+    const { session } = build({
+      seed: 5,
+      count: 12,
+      missed: parseLog(withSeed(source.seed, "8.EE.A.2")),
+    });
+    expect(
+      session.items.filter((i) => i.standard === "8.EE.A.2").length,
+    ).toBeGreaterThanOrEqual(2);
+  });
+
+  test("seedless misses are reported so the fix is discoverable", () => {
+    const { notes } = build({
+      missed: parseLog(`${LOG_MARKER}\nAug 4 | 7.NS.A.1 | -4 + 11 | 7 | wrong`),
+    });
+    expect(notes.some((n) => n.includes("no item seeds"))).toBe(true);
+  });
+
+  test("every key prints a paste-ready log line carrying the seed", () => {
+    const { session } = build({ seed: 11, count: 12 });
+    const key = renderKey(session);
+    for (const item of session.items) {
+      expect(key).toContain(`| ${item.seed}`);
+    }
+    expect((key.match(/^log: /gm) ?? []).length).toBe(session.items.length);
+  });
+
+  test("a printed log line round-trips back through the parser", () => {
+    const { session } = build({ seed: 11, count: 12 });
+    const lines = (renderKey(session).match(/^log: .+$/gm) ?? []).map((l) =>
+      // What a parent does: drop the prefix, fill the two blanks.
+      l.replace(/^log: /, "").replace("|  |  |", "| x + 1 | wrong |"),
+    );
+    const entries = parseLog([LOG_MARKER, ...lines].join("\n"));
+    expect(entries).toHaveLength(session.items.length);
+    expect(entries.map((e) => e.seed)).toEqual(session.items.map((i) => i.seed));
+    expect(misses(entries)).toHaveLength(session.items.length);
+  });
+});

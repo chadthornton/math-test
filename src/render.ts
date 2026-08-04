@@ -60,7 +60,27 @@ export function renderSet(session: Session): string {
   return out.join("\n").trimEnd() + "\n";
 }
 
-export function renderKey(session: Session): string {
+export interface KeyOptions {
+  /** Seeds of items rebuilt from the log, so the key can mark them. */
+  recall?: ReadonlySet<number>;
+}
+
+/**
+ * A paste-ready log.md line, with the seed already filled in. The seed is what
+ * makes a missed problem reconstructible later -- see log.md. Everything is
+ * pre-filled except what she wrote and how it went.
+ */
+function logLine(item: { standard: string; prompt: string; seed: number }, date: string): string {
+  const lines = item.prompt.split("\n").filter((l) => l.trim().length > 0);
+  const problem = (lines[lines.length - 1] ?? "")
+    .replace(/^\s*\w+:\s*/, "") // drop the directive
+    .replace(/\|/g, "/") // a pipe would break the field split
+    .trim();
+  const short = problem.length > 44 ? `${problem.slice(0, 41)}...` : problem;
+  return `log: ${date} | ${item.standard} | ${short} |  |  | ${item.seed}`;
+}
+
+export function renderKey(session: Session, opts: KeyOptions = {}): string {
   const out: string[] = [
     `# Answer Key -- ${session.date}`,
     "",
@@ -70,15 +90,20 @@ export function renderKey(session: Session): string {
     "the printed problem, not written out by hand.",
     "",
     "Each entry ends with the likely wrong answer and what it means. If she",
-    "produces that answer, log the raw error -- see brief.md, error log.",
+    "produces that answer, copy the `log:` line into log.md and fill in the two",
+    "blank fields -- what she wrote, and wrong / stuck / slow. The seed is",
+    "already there, and it is what lets a later session re-drill this exact",
+    "problem rather than another one like it.",
     "",
     RULE,
     "",
   ];
 
   session.items.forEach((item, i) => {
+    const isRecall = opts.recall?.has(item.seed) ?? false;
     out.push(
-      `**${i + 1}.** \`${item.standard}\` | tier ${item.tier} | seed \`${item.seed}\``,
+      `**${i + 1}.** \`${item.standard}\` | tier ${item.tier} | seed \`${item.seed}\`` +
+        (isRecall ? " | **spaced recall -- she missed this one before**" : ""),
       "",
       fence(
         [
@@ -91,6 +116,8 @@ export function renderKey(session: Session): string {
       ),
       "",
       `**If she wrote** ${item.trap}.`,
+      "",
+      fence(logLine(item, session.date)),
       "",
       RULE,
       "",

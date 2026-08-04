@@ -34,6 +34,13 @@ export interface LogEntry {
   problem: string;
   wrote: string;
   outcome: string;
+  /**
+   * Optional sixth field. When present, the exact item can be rebuilt with
+   * generate(new RNG(seed)) -- so spaced recall re-drills the problem she
+   * actually missed, not just another one from the same standard. The answer
+   * key prints a ready-to-paste log line with this already filled in.
+   */
+  seed?: number;
 }
 
 const KNOWN: ReadonlySet<string> = new Set<string>([
@@ -56,12 +63,23 @@ export function parseLog(text: string): LogEntry[] {
     const fields = line.split("|").map((f) => f.trim());
     if (fields.length < 5) continue;
     if (!KNOWN.has(fields[1]!)) continue; // skips headers, rules, prose
+
+    // A trailing all-digits field is the item seed, not part of the outcome.
+    let tail = fields.slice(4);
+    let seed: number | undefined;
+    const last = tail[tail.length - 1];
+    if (tail.length > 1 && last !== undefined && /^\d+$/.test(last)) {
+      seed = Number(last);
+      tail = tail.slice(0, -1);
+    }
+
     entries.push({
       date: fields[0]!,
       standard: fields[1]! as Standard,
       problem: fields[2]!,
       wrote: fields[3]!,
-      outcome: fields.slice(4).join(" | "),
+      outcome: tail.join(" | "),
+      ...(seed === undefined ? {} : { seed }),
     });
   }
   return entries;
@@ -99,14 +117,64 @@ export interface AssembleResult {
   /** Anything the assembler could not honour, stated plainly. */
   notes: string[];
   rejected: number;
+  /** Seeds of items rebuilt exactly from the log, for marking on the key. */
+  recalled: Set<number>;
 }
 
 const tierOf = (s: Standard): Tier => REGISTRY[s]!.tier;
+
+/** How many exact re-drills brief.md §5 rule 4 asks for. */
+const RECALL_TARGET = 2;
+
+/**
+ * Rebuild the exact items she missed, from the seeds logged beside them.
+ * An entry with no seed cannot be reconstructed -- those fall back to
+ * standard-level recall in allocate().
+ */
+function rebuildMissed(
+  missed: readonly LogEntry[],
+  candidates: Standard[],
+  notes: string[],
+): Item[] {
+  const out: Item[] = [];
+  const seen = new Set<number>();
+
+  for (const entry of missed) {
+    if (out.length >= RECALL_TARGET) break;
+    if (entry.seed === undefined) continue;
+    if (seen.has(entry.seed)) continue;
+    if (!candidates.includes(entry.standard)) continue;
+
+    const gen = REGISTRY[entry.standard];
+    if (!gen) continue;
+
+    const item = gen.generate(new RNG(entry.seed));
+    // The generator may have changed since the item was printed. Only ship a
+    // rebuilt item if it still verifies and still matches what was logged.
+    if (!gen.verify(item)) {
+      notes.push(
+        `Seed ${entry.seed} (${entry.standard}) no longer rebuilds a valid item; the generator changed since it was printed. Falling back to a fresh item from that standard.`,
+      );
+      continue;
+    }
+    seen.add(entry.seed);
+    out.push(item);
+  }
+
+  const seeded = missed.filter((m) => m.seed !== undefined).length;
+  if (missed.length > 0 && seeded === 0) {
+    notes.push(
+      "Logged misses carry no item seeds, so recall is by standard rather than by exact problem. Paste the `log:` line from the answer key to fix that.",
+    );
+  }
+  return out;
+}
 
 function allocate(
   candidates: Standard[],
   count: number,
   missedStandards: Standard[],
+  pinned: Map<Standard, number>,
   rng: RNG,
   notes: string[],
 ): Map<Standard, number> {
@@ -121,14 +189,24 @@ function allocate(
   };
   const total = () => [...counts.values()].reduce((a, b) => a + b, 0);
 
-  // Rule 4: >= 2 items from standards she has missed.
+  // Exact re-drills are already chosen; reserve their slots first.
+  let recallSlots = 0;
+  for (const [standard, n] of pinned) {
+    for (let i = 0; i < n; i++) if (bump(standard)) recallSlots++;
+  }
+
+  // Rule 4: >= 2 items from standards she has missed. Exact rebuilds count
+  // toward the target; anything short is topped up at standard level.
   const recall = shuffle(missedStandards, rng);
-  if (recall.length === 0) {
+  if (recall.length === 0 && recallSlots === 0) {
     notes.push(
       "No logged misses, so the spaced-recall rule (>= 2 items she missed) was not applied. Fill in log.md as she works.",
     );
   } else {
-    for (let i = 0; i < 2; i++) bump(recall[i % recall.length]!);
+    for (let i = recallSlots; i < RECALL_TARGET; i++) {
+      if (recall.length === 0) break;
+      bump(recall[i % recall.length]!);
+    }
   }
 
   // Rule 3: at least one tier-1 item, whatever tiers were asked for.
@@ -227,19 +305,36 @@ export function assemble(opts: AssembleOptions): AssembleResult {
     );
   }
 
-  const missedStandards = [
-    ...new Set((opts.missed ?? []).map((m) => m.standard)),
-  ].filter((s) => candidates.includes(s));
+  const missed = opts.missed ?? [];
+  const missedStandards = [...new Set(missed.map((m) => m.standard))].filter(
+    (s) => candidates.includes(s),
+  );
+
+  // Rebuild the exact problems she missed, where a seed was logged.
+  const exact = rebuildMissed(missed, candidates, notes);
+  const pinned = new Map<Standard, number>();
+  for (const item of exact) {
+    pinned.set(item.standard, (pinned.get(item.standard) ?? 0) + 1);
+  }
+  if (exact.length > 0) {
+    notes.push(
+      `${exact.length} item(s) rebuilt exactly from logged seeds, not just re-drawn from the same standard.`,
+    );
+  }
 
   const rng = new RNG(opts.seed);
-  const counts = allocate(candidates, count, missedStandards, rng, notes);
+  const counts = allocate(candidates, count, missedStandards, pinned, rng, notes);
 
   let rejected = 0;
   const groups = new Map<Standard, Item[]>();
   for (const [standard, n] of counts) {
     if (n === 0) continue;
     const gen = REGISTRY[standard] as Generator;
-    groups.set(standard, generateItems(gen, rng, n, { onReject: () => rejected++ }));
+    const reused = exact.filter((i) => i.standard === standard);
+    const fresh = generateItems(gen, rng, n - reused.length, {
+      onReject: () => rejected++,
+    });
+    groups.set(standard, [...reused, ...fresh]);
   }
 
   const items = interleave(groups, rng);
@@ -249,5 +344,6 @@ export function assemble(opts: AssembleOptions): AssembleResult {
     session: { seed: opts.seed, date: opts.date, items },
     notes,
     rejected,
+    recalled: new Set(exact.map((i) => i.seed)),
   };
 }
