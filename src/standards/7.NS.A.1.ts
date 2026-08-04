@@ -15,7 +15,7 @@
 // formatting all surface as a rejected item rather than a wrong answer key.
 
 import type { Generator, Item, Tier } from "../generate.ts";
-import { RNG } from "../generate.ts";
+import { RNG, checkCommon, trap, trapAnswer } from "../generate.ts";
 
 const STANDARD = "7.NS.A.1" as const;
 const TIER: Tier = 1;
@@ -208,7 +208,7 @@ function generate(rng: RNG): Item {
     prompt: `${DIRECTIVE}  ${expression}`,
     solution: String(evaluate(head, tail)),
     work,
-    trap: `\`${trapValue}\` -- ${trapMeaning}`,
+    trap: trap(trapValue, trapMeaning),
     tier: TIER,
     seed: rng.seed,
   };
@@ -220,9 +220,7 @@ function generate(rng: RNG): Item {
 
 const HEAD_RE = /^(?:\((-?\d+)\)|(-?\d+))/;
 const STEP_RE = /^\s*([+-])\s*(?:\((-?\d+)\)|(-?\d+))/;
-const ASCII_RE = /^[\x20-\x7e]*$/;
 const INTEGER_RE = /^-?(?:0|[1-9]\d*)$/;
-const TRAP_RE = /^`(-?\d+)` -- \S/;
 
 interface Parsed {
   operands: number[];
@@ -253,12 +251,7 @@ function parseExpression(src: string): Parsed | null {
 }
 
 function verify(item: Item): boolean {
-  if (item.standard !== STANDARD || item.tier !== TIER) return false;
-
-  for (const text of [item.prompt, item.solution, item.trap, ...item.work]) {
-    if (!ASCII_RE.test(text)) return false; // monospace-safe
-  }
-  if (item.work.length === 0) return false;
+  if (!checkCommon(item, STANDARD, TIER)) return false;
 
   if (!item.prompt.startsWith(`${DIRECTIVE}  `)) return false;
   const parsed = parseExpression(item.prompt.slice(DIRECTIVE.length));
@@ -276,10 +269,11 @@ function verify(item: Item): boolean {
   if (!INTEGER_RE.test(item.solution)) return false;
   if (parsed.value !== Number(item.solution)) return false;
 
-  // A distractor equal to the answer teaches nothing.
-  const trap = TRAP_RE.exec(item.trap);
-  if (!trap) return false;
-  if (Number(trap[1]) === parsed.value) return false;
+  // checkCommon caught a distractor identical to the answer as a string;
+  // this catches one that is numerically equal (`-0`, `+7`, and friends).
+  const wrong = trapAnswer(item.trap);
+  if (wrong === null || !INTEGER_RE.test(wrong)) return false;
+  if (Number(wrong) === parsed.value) return false;
 
   return true;
 }

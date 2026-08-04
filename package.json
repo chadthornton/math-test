@@ -4,6 +4,8 @@
   "type": "module",
   "scripts": {
     "gen": "bun run src/cli.ts gen",
+    "session": "bun run src/cli.ts session",
+    "drill": "bun run src/cli.ts drill",
     "test": "bun test"
   },
   "devDependencies": {

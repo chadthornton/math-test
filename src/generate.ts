@@ -101,6 +101,55 @@ export class RNG {
 }
 
 // ---------------------------------------------------------------------------
+// Shared conventions every standard module relies on
+// ---------------------------------------------------------------------------
+
+// Printable ASCII plus newlines -- prompts for some standards span lines.
+const ASCII_RE = /^[\x20-\x7e\n]*$/;
+const TRAP_RE = /^`([^`]+)` -- \S/;
+
+export function isAscii(text: string): boolean {
+  return ASCII_RE.test(text);
+}
+
+/** Distractors are written `<wrong answer>` -- <what choosing it means>. */
+export function trap(answer: string | number, meaning: string): string {
+  return `\`${answer}\` -- ${meaning}`;
+}
+
+/** Pull the wrong answer back out of a trap string, so verifiers can check it. */
+export function trapAnswer(text: string): string | null {
+  return TRAP_RE.exec(text)?.[1] ?? null;
+}
+
+/**
+ * The checks that apply to every standard: right label, printable, has work,
+ * and a distractor that is not simply the correct answer. Standard modules
+ * add their own mathematical verification on top.
+ */
+export function checkCommon(item: Item, standard: Standard, tier: Tier): boolean {
+  if (item.standard !== standard || item.tier !== tier) return false;
+  if (item.work.length === 0) return false;
+  for (const text of [item.prompt, item.solution, item.trap, ...item.work]) {
+    if (!isAscii(text)) return false; // monospace-safe
+  }
+  const wrong = trapAnswer(item.trap);
+  if (wrong === null) return false;
+  if (wrong.trim() === item.solution.trim()) return false;
+  return true;
+}
+
+/** Fisher-Yates, seeded. Does not mutate the input. */
+export function shuffle<T>(xs: readonly T[], rng: RNG): T[] {
+  const out = [...xs];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = rng.int(0, i);
+    [out[i], out[j]] = [out[j]!, out[i]!];
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
 // generate -> verify -> if false, discard and regenerate
 // ---------------------------------------------------------------------------
 

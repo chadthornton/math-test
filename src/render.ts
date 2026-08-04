@@ -8,7 +8,7 @@
 // a heading that names the procedure is exactly what blocked practice trains,
 // and the retake is interleaved. Standards appear on the key only.
 
-import type { Item, Session } from "./generate.ts";
+import type { Session } from "./generate.ts";
 
 const RULE = "---";
 
@@ -41,10 +41,16 @@ export function renderSet(session: Session): string {
   ];
 
   session.items.forEach((item, i) => {
+    // A multi-line prompt asks for more than one thing -- 8.F.A.1 wants a
+    // yes/no, a reason, a domain and a range. One ruled line is not enough.
+    const lines = item.prompt.includes("\n") ? 3 : 1;
+    const answer = Array.from({ length: lines }, (_, n) =>
+      n === 0 ? "Answer: ______________" : "        ______________",
+    );
     out.push(
       `**${i + 1}.**`,
       "",
-      fence([item.prompt, "", "Answer: ______________"].join("\n")),
+      fence([item.prompt, "", ...answer].join("\n")),
       "",
       RULE,
       "",
@@ -92,14 +98,4 @@ export function renderKey(session: Session): string {
   });
 
   return out.join("\n").trimEnd() + "\n";
-}
-
-/** Compact one-line-per-item view, for checking a run at a glance. */
-export function renderInline(items: Item[]): string {
-  return items
-    .map((item, i) => {
-      const expression = item.prompt.replace(/^\S+\s+/, "");
-      return `${String(i + 1).padStart(2)}.  ${expression.padEnd(22)} =  ${item.solution.padStart(4)}`;
-    })
-    .join("\n");
 }
