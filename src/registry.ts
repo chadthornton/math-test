@@ -10,6 +10,11 @@ import multiplication from "./standards/5.NBT.B.5.ts";
 import exponents from "./standards/8.EE.A.1.ts";
 import roots from "./standards/8.EE.A.2.ts";
 import functionVocabulary from "./standards/8.F.A.1.ts";
+import likeTerms from "./standards/7.EE.A.1.ts";
+import inequalities from "./standards/7.EE.B.4.ts";
+import bothSides from "./standards/8.EE.C.7b.ts";
+import substitution from "./standards/8.EE.C.8b.ts";
+import wordProblems from "./standards/8.F.B.4.ts";
 
 export const REGISTRY: Partial<Record<Standard, Generator>> = {
   "7.NS.A.1": signedArithmetic,
@@ -17,6 +22,11 @@ export const REGISTRY: Partial<Record<Standard, Generator>> = {
   "8.EE.A.1": exponents,
   "8.EE.A.2": roots,
   "8.F.A.1": functionVocabulary,
+  "7.EE.A.1": likeTerms,
+  "7.EE.B.4": inequalities,
+  "8.EE.C.7b": bothSides,
+  "8.EE.C.8b": substitution,
+  "8.F.B.4": wordProblems,
 };
 
 export const BUILT: Standard[] = Object.keys(REGISTRY) as Standard[];

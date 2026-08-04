@@ -17,8 +17,7 @@ document.** It lives here as `brief.md`. There is no second brief to find.
 
 ## Status
 
-Build order steps **1–4 are done**, plus the log parsing half of step 6.
-Tiers 1 and 2 are complete — the daily drilling and the travel-week work.
+**All six build-order steps are done. All ten standards are built.**
 
 | Step | | State |
 |---|---|---|
@@ -26,12 +25,15 @@ Tiers 1 and 2 are complete — the daily drilling and the travel-week work.
 | 2 | `render.ts`, printable output | done |
 | 3 | Remaining tier 1 + tier 2 generators | done |
 | 4 | `assemble.ts` + the three assembler tests | done |
-| 5 | Tier 3 + 4 generators | not started |
-| 6 | `--from-log` | log parsing done; miss weighting not started |
+| 5 | Tier 3 + 4 generators | done |
+| 6 | `--from-log` | done |
 
-Standards built: `7.NS.A.1` `5.NBT.B.5` (tier 1) · `8.EE.A.1` `8.EE.A.2`
-`8.F.A.1` (tier 2). Remaining: `7.EE.A.1` `7.EE.B.4` `8.EE.C.7b` `8.EE.C.8b`
-`8.F.B.4` — all tier 3/4, all tutor-owned, per brief.md §8.
+| Tier | Standards |
+|---|---|
+| 1 — root causes, daily | `7.NS.A.1` `5.NBT.B.5` |
+| 2 — cheap, travel week | `8.EE.A.1` `8.EE.A.2` `8.F.A.1` |
+| 3 — procedural | `7.EE.A.1` `7.EE.B.4` `8.EE.C.7b` |
+| 4 — compound, tutor | `8.EE.C.8b` `8.F.B.4` |
 
 Nothing from the non-goals list is present: no UI, no auth, no database, no
 adaptive difficulty, no spaced-repetition engine, no LaTeX. Output is
@@ -66,7 +68,8 @@ src/
   generate.ts             seeded RNG, data model, generate/verify loop
   assemble.ts             session builder + log.md parser
   render.ts               markdown out
-  registry.ts             the standards that exist so far
+  registry.ts             the standard-to-generator map
+  linear.ts               shared linear-expression reader/renderer
   cli.ts
   standards/
     7.NS.A.1.ts           signed arithmetic          tier 1
@@ -74,12 +77,18 @@ src/
     8.EE.A.1.ts           exponent rules             tier 2
     8.EE.A.2.ts           square and cube roots      tier 2
     8.F.A.1.ts            function vocabulary        tier 2
+    7.EE.A.1.ts           like terms                 tier 3
+    7.EE.B.4.ts           inequalities               tier 3
+    8.EE.C.7b.ts          variables on both sides    tier 3
+    8.EE.C.8b.ts          systems by substitution    tier 4
+    8.F.B.4.ts            linear word problems       tier 4
 out/                      generated sets + keys (gitignored)
 ```
 
-`registry.ts` is not in spec.md's file tree. `assemble.ts`, `cli.ts` and the
-tests all need the same standard-to-generator map, and duplicating it in three
-places was worse.
+Two files are not in spec.md's tree. `registry.ts` holds the standard-to-generator
+map that `assemble.ts`, `cli.ts` and the tests all need. `linear.ts` is the shared
+expression reader four standards use to evaluate printed text back into numbers —
+one reader beats four copies.
 
 ## Two design decisions worth keeping
 
@@ -112,6 +121,13 @@ exists to catch. The verifier therefore also asserts the radicand is squarefree,
 which is what makes an extraction maximal. Without it the generator would ship
 the error as the answer key. There is a test for this.
 
+**8.F.B.4 stories are templates, not computed text.** A word problem needs
+prose, and prose has to be written once by a human. Everything the key asserts
+is still computed from the same parameters — the numbers, the model equation,
+the solution, the sentence. The verifier also checks that every number in the
+model actually appears in the story, which catches a template that drops or
+renames a value. That is the most a verifier can do about English.
+
 **Decimal products are not "fractional answers".** The global constraint says
 integer solutions only. Read literally that would delete the `decimal × decimal`
 form, whose whole purpose is the decimal-place-count misconception. It is read
@@ -119,13 +135,24 @@ here as barring fractions and non-terminating answers — the no-calculator
 concern — so exact decimals stay. All decimal arithmetic is done in integers
 with the point placed afterwards, so no float error reaches the key.
 
-## Known limits
+## Spaced recall re-drills the exact problem
 
-**Spaced recall is by standard, not by item.** brief.md §5 rule 4 asks for ≥ 2
-items she missed in a prior session. `log.md` records the problem as text, not
-the seed that produced it, so the exact past item cannot be reconstructed. What
-`--from-log` guarantees is ≥ 2 items drawn from the standards she missed.
-Logging the per-item seed printed on the key would close this.
+`log.md` takes an optional sixth field: the item seed. `Item.seed` round-trips
+through `generate(new RNG(seed))`, so a logged seed makes the exact problem she
+missed reconstructible digit for digit — `--from-log` rebuilds it into the next
+session and the key marks it as spaced recall.
+
+Every key entry prints a paste-ready log line with the seed already filled in,
+so recording it costs nothing:
+
+```
+log: 2026-08-04 | 7.NS.A.1 | -10 - (-15) |  |  | 2581720956
+```
+
+Entries without a seed still work; they fall back to recall by standard, and the
+assembler says so in its notes rather than silently downgrading.
+
+## Known limits
 
 **Tier 1 appears even when you ask for tier 2 only.** brief.md §5 rule 3 says
 tier 1 appears in every session *regardless of plan*, so `--tier 2` still yields

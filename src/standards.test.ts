@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { RNG, generateItems, trapAnswer, type Generator } from "./generate.ts";
+import { evaluate } from "./linear.ts";
 import { BUILT, REGISTRY } from "./registry.ts";
 
 const sample = (gen: Generator, count: number, seed = 42) =>
@@ -285,6 +286,336 @@ describe("8.F.A.1", () => {
       expect(item.prompt).toContain("domain");
       expect(item.prompt).toContain("range");
       expect(item.prompt).toContain("function");
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// batch-level constraints: "negative ... in >= half of items" (spec.md)
+// ---------------------------------------------------------------------------
+
+describe("balance constraints", () => {
+  test.each(["7.EE.A.1", "7.EE.B.4"] as const)(
+    "%s has negatives in at least half of every batch",
+    (name) => {
+      const gen = REGISTRY[name]!;
+      expect(gen.balance).toBeDefined();
+      for (const seed of [1, 2, 3, 7, 42, 99]) {
+        for (const count of [4, 6, 8, 13]) {
+          const items = generateItems(gen, new RNG(seed), count);
+          const holding = items.filter((i) => gen.balance!.holds(i)).length;
+          expect(holding).toBeGreaterThanOrEqual(Math.ceil(count / 2));
+        }
+      }
+    },
+  );
+
+  test("balancing does not sort the batch", () => {
+    const gen = REGISTRY["7.EE.B.4"]!;
+    const flags = generateItems(gen, new RNG(4), 12).map((i) =>
+      gen.balance!.holds(i),
+    );
+    expect(flags).not.toEqual([...flags].sort());
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 7.EE.A.1 -- like terms
+// ---------------------------------------------------------------------------
+
+describe("7.EE.A.1", () => {
+  const gen = REGISTRY["7.EE.A.1"]!;
+  const item = (prompt: string, solution: string, trap: string) => ({
+    standard: "7.EE.A.1" as const,
+    tier: 3 as const,
+    seed: 7,
+    prompt,
+    solution,
+    work: ["step"],
+    trap,
+  });
+
+  test("catches distributing to the first term only", () => {
+    // 7x - 2(3x - 5) + 4  =  x + 14. Dropping the second distribute gives x - 1.
+    expect(
+      gen.verify(item("Simplify:  7x - 2(3x - 5) + 4", "x + 14", "`x - 1` -- y")),
+    ).toBe(true);
+    expect(
+      gen.verify(item("Simplify:  7x - 2(3x - 5) + 4", "x - 1", "`x + 14` -- y")),
+    ).toBe(false);
+  });
+
+  test("an unsimplified answer is rejected even though it evaluates equal", () => {
+    // Identical expression: equal at every x, but not simplified.
+    expect(
+      gen.verify(
+        item(
+          "Simplify:  7x - 2(3x - 5) + 4",
+          "7x - 2(3x - 5) + 4",
+          "`x + 14` -- y",
+        ),
+      ),
+    ).toBe(false);
+  });
+
+  test("the simplified form matches the original at many x", () => {
+    for (const it of sample(gen, 150, 19)) {
+      const question = it.prompt.replace("Simplify:  ", "");
+      for (let x = -20; x <= 20; x += 7) {
+        expect(evaluate(question, { x })).toBe(evaluate(it.solution, { x })!);
+      }
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 7.EE.B.4 -- inequalities
+// ---------------------------------------------------------------------------
+
+describe("7.EE.B.4", () => {
+  const gen = REGISTRY["7.EE.B.4"]!;
+  const item = (prompt: string, solution: string, trap: string) => ({
+    standard: "7.EE.B.4" as const,
+    tier: 3 as const,
+    seed: 7,
+    prompt,
+    solution,
+    work: ["step"],
+    trap,
+  });
+  const ask = "Solve, then describe the graph:  ";
+
+  test("catches a missing flip on a negative coefficient", () => {
+    // -3x + 2 > 11  ->  -3x > 9  ->  x < -3, sign flipped.
+    expect(
+      gen.verify(
+        item(
+          `${ask}-3x + 2 > 11`,
+          "x < -3 (open dot at -3, arrow left)",
+          "`x > -3 (open dot at -3, arrow right)` -- y",
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      gen.verify(
+        item(
+          `${ask}-3x + 2 > 11`,
+          "x > -3 (open dot at -3, arrow right)",
+          "`x < -3 (open dot at -3, arrow left)` -- y",
+        ),
+      ),
+    ).toBe(false);
+  });
+
+  test("catches a wrong dot fill", () => {
+    expect(
+      gen.verify(
+        item(
+          `${ask}2x + 1 >= 9`,
+          "x >= 4 (closed dot at 4, arrow right)",
+          "`x <= 4 (closed dot at 4, arrow left)` -- y",
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      gen.verify(
+        item(
+          `${ask}2x + 1 >= 9`,
+          "x >= 4 (open dot at 4, arrow right)",
+          "`x <= 4 (closed dot at 4, arrow left)` -- y",
+        ),
+      ),
+    ).toBe(false);
+  });
+
+  test("catches a wrong arrow direction", () => {
+    expect(
+      gen.verify(
+        item(
+          `${ask}2x + 1 >= 9`,
+          "x >= 4 (closed dot at 4, arrow left)",
+          "`x <= 4 (closed dot at 4, arrow right)` -- y",
+        ),
+      ),
+    ).toBe(false);
+  });
+
+  test("the boundary sits on the equality and the sides really differ", () => {
+    for (const it of sample(gen, 200, 23)) {
+      const m = /:\s+(-?\d*)x\s*([+-])\s*(\d+)\s*(<=|>=|<|>)\s*(-?\d+)$/.exec(
+        it.prompt,
+      )!;
+      const a = m[1] === "" ? 1 : m[1] === "-" ? -1 : Number(m[1]);
+      const b = (m[2] === "-" ? -1 : 1) * Number(m[3]);
+      const c = Number(m[5]);
+      const k = Number(/x [<>]=? (-?\d+)/.exec(it.solution)![1]);
+      expect(a * k + b).toBe(c);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 8.EE.C.7b -- variables on both sides
+// ---------------------------------------------------------------------------
+
+describe("8.EE.C.7b", () => {
+  const gen = REGISTRY["8.EE.C.7b"]!;
+
+  test("the claimed x balances both sides", () => {
+    for (const it of sample(gen, 300, 29)) {
+      const [left, right] = it.prompt.replace("Solve:  ", "").split("=");
+      const x = Number(/x = (-?\d+)/.exec(it.solution)![1]);
+      expect(evaluate(left!, { x })).toBe(evaluate(right!, { x })!);
+    }
+  });
+
+  test("the distractor never also solves the equation", () => {
+    for (const it of sample(gen, 300, 31)) {
+      const [left, right] = it.prompt.replace("Solve:  ", "").split("=");
+      const wrong = Number(/x = (-?\d+)/.exec(trapAnswer(it.trap)!)![1]);
+      expect(evaluate(left!, { x: wrong })).not.toBe(evaluate(right!, { x: wrong })!);
+    }
+  });
+
+  test("both sides carry a variable and a degenerate equation is rejected", () => {
+    const base = {
+      standard: "8.EE.C.7b" as const,
+      tier: 3 as const,
+      seed: 1,
+      work: ["s"],
+      trap: "`x = 9` -- y",
+    };
+    // a === c: no unique solution.
+    expect(
+      gen.verify({ ...base, prompt: "Solve:  2x - 3 = 2x - 3", solution: "x = 4" }),
+    ).toBe(false);
+    // No variable on the right.
+    expect(
+      gen.verify({ ...base, prompt: "Solve:  2x - 3 = 5", solution: "x = 4" }),
+    ).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 8.EE.C.8b -- substitution, NOT equal-values (brief §7)
+// ---------------------------------------------------------------------------
+
+describe("8.EE.C.8b", () => {
+  const gen = REGISTRY["8.EE.C.8b"]!;
+  const ask = "Solve the system by SUBSTITUTION. Give both x and y.";
+  const item = (a: string, b: string, solution: string) => ({
+    standard: "8.EE.C.8b" as const,
+    tier: 4 as const,
+    seed: 1,
+    prompt: `${ask}\n\n  ${a}\n  ${b}`,
+    solution,
+    work: ["s"],
+    trap: "`x = 99` -- y",
+  });
+
+  test("an equal-values pair is rejected -- brief §7's correction", () => {
+    // Both solved for y: this is the method the practice test wrongly teaches.
+    expect(gen.verify(item("y = 2x - 3", "y = -x + 3", "x = 2, y = 1"))).toBe(false);
+    // One solved, one in standard form: substitution is the only path.
+    expect(gen.verify(item("y = 2x - 3", "4x + 3y = 11", "x = 2, y = 1"))).toBe(true);
+  });
+
+  test("exactly one equation is solved for a variable, in every item", () => {
+    for (const it of sample(gen, 300, 37)) {
+      const equations = it.prompt
+        .split("\n")
+        .map((l) => l.trim())
+        .filter((l) => l.includes("=") && !l.startsWith("Solve"));
+      expect(equations).toHaveLength(2);
+      expect(equations.filter((e) => /^[xy] = [^=]+$/.test(e))).toHaveLength(1);
+    }
+  });
+
+  test("the solution satisfies BOTH equations", () => {
+    for (const it of sample(gen, 300, 41)) {
+      const m = /^x = (-?\d+), y = (-?\d+)$/.exec(it.solution)!;
+      const vars = { x: Number(m[1]), y: Number(m[2]) };
+      const equations = it.prompt
+        .split("\n")
+        .map((l) => l.trim())
+        .filter((l) => l.includes("=") && !l.startsWith("Solve"));
+      for (const equation of equations) {
+        const [left, right] = equation.split("=");
+        expect(evaluate(left!, vars)).toBe(evaluate(right!, vars)!);
+      }
+    }
+  });
+
+  test("a wrong pair is rejected", () => {
+    expect(gen.verify(item("y = 2x - 3", "4x + 3y = 11", "x = 2, y = 2"))).toBe(false);
+    expect(gen.verify(item("y = 2x - 3", "4x + 3y = 11", "x = 3, y = 1"))).toBe(false);
+  });
+
+  test("parallel lines have no unique solution and are rejected", () => {
+    expect(gen.verify(item("y = 2x - 3", "4x - 2y = 6", "x = 2, y = 1"))).toBe(false);
+  });
+
+  test("the parentheses error appears as a distractor, not only the stop-early one", () => {
+    const parens = sample(gen, 300, 43).filter((i) =>
+      i.trap.includes("dropped the parentheses"),
+    );
+    expect(parens.length).toBeGreaterThan(30);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 8.F.B.4 -- linear word problems
+// ---------------------------------------------------------------------------
+
+describe("8.F.B.4", () => {
+  const gen = REGISTRY["8.F.B.4"]!;
+
+  test("the solution satisfies the model equation", () => {
+    for (const it of sample(gen, 300, 47)) {
+      const m = /^Equation: (.+)\n([a-z]) = (-?\d+)\n/.exec(it.solution)!;
+      const [left, right] = m[1]!.split("=");
+      const vars = { [m[2]!]: Number(m[3]) };
+      expect(evaluate(left!, vars)).toBe(evaluate(right!, vars)!);
+    }
+  });
+
+  test("every number in the model appears in the story", () => {
+    for (const it of sample(gen, 300, 53)) {
+      const story = new Set((it.prompt.match(/\d+/g) ?? []).map(Number));
+      const equation = /^Equation: (.+)$/m.exec(it.solution)![1]!;
+      for (const n of equation.match(/\d+/g) ?? []) {
+        expect(story.has(Number(n))).toBe(true);
+      }
+    }
+  });
+
+  test("the answer sentence carries a unit", () => {
+    for (const it of sample(gen, 200, 59)) {
+      const sentence = /Sentence: (.+)$/.exec(it.solution)![1]!;
+      expect(sentence).toMatch(/\b(months|weeks|miles|minutes)\b/);
+    }
+  });
+
+  test("a sentence without units is rejected", () => {
+    const it = sample(gen, 1, 61)[0]!;
+    const stripped = it.solution.replace(
+      /Sentence: .+$/,
+      "Sentence: It takes 4.",
+    );
+    expect(gen.verify({ ...it, solution: stripped })).toBe(false);
+  });
+
+  test("both named errors appear as distractors", () => {
+    const items = sample(gen, 300, 67);
+    expect(items.filter((i) => i.trap.includes("wrong slot")).length).toBeGreaterThan(30);
+    expect(items.filter((i) => i.trap.includes("stopped at the number")).length).toBeGreaterThan(30);
+  });
+
+  test("a decreasing story produces a negative rate", () => {
+    const draining = sample(gen, 300, 71).filter((i) => i.prompt.includes("drains"));
+    expect(draining.length).toBeGreaterThan(20);
+    for (const it of draining) {
+      expect(it.solution).toMatch(/Equation: -\d+/);
     }
   });
 });

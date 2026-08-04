@@ -39,6 +39,16 @@ export interface Generator {
   tier: Tier;
   generate(rng: RNG): Item;
   verify(item: Item): boolean; // REQUIRED
+  /**
+   * Optional constraint on a BATCH rather than on any single item. spec.md
+   * requires negative coefficients in >= half of items for 7.EE.A.1 and
+   * 7.EE.B.4 -- that is the diagnosed weakness, so leaving it to chance
+   * would let a session miss it entirely. generateItems() enforces it.
+   */
+  balance?: {
+    label: string;
+    holds(item: Item): boolean;
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -186,5 +196,24 @@ export function generateItems(
 ): Item[] {
   const items: Item[] = [];
   for (let i = 0; i < count; i++) items.push(generateItem(gen, rng, opts));
-  return items;
+
+  const balance = gen.balance;
+  if (!balance || count === 0) return items;
+
+  // Swap items until at least half the batch satisfies the constraint.
+  const target = Math.ceil(count / 2);
+  let holding = items.filter((item) => balance.holds(item)).length;
+  for (let guard = 0; holding < target && guard < count * 100; guard++) {
+    const index = items.findIndex((item) => !balance.holds(item));
+    if (index === -1) break;
+    const replacement = generateItem(gen, rng, opts);
+    if (!balance.holds(replacement)) continue;
+    items[index] = replacement;
+    holding++;
+  }
+
+  // Replacements always land at the earliest failing position, which bunches
+  // the balanced items at one end. brief.md §5 rule 5 says do not hand her a
+  // sorted set, so undo the clustering.
+  return shuffle(items, rng);
 }
