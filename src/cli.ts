@@ -3,7 +3,7 @@
 //   bun run gen     --standards 7.NS.A.1,8.EE.A.1 --count 10 --seed 42
 //   bun run session --tier 1,2 --count 12 --seed 7
 //   bun run session --from-log --count 12
-//   bun run drill   --standard 5.NBT.B.5 --count 20
+//   bun run drill   --standard 7.NS.A.1 --count 20
 //
 // All commands emit two files to out/: the set and the key.
 

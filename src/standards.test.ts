@@ -55,47 +55,6 @@ describe.each(BUILT)("%s", (name) => {
 });
 
 // ---------------------------------------------------------------------------
-// 5.NBT.B.5 -- decimals must be exact
-// ---------------------------------------------------------------------------
-
-describe("5.NBT.B.5", () => {
-  const gen = REGISTRY["5.NBT.B.5"]!;
-
-  test("decimal answers are exact, not float noise", () => {
-    const decimals = sample(gen, 500, 31).filter((i) => i.prompt.includes("."));
-    expect(decimals.length).toBeGreaterThan(50);
-    for (const item of decimals) {
-      // At most three places, and no 0.30000000000000004 tails.
-      expect(item.solution).toMatch(/^\d+(\.\d{1,3})?$/);
-    }
-  });
-
-  test("beats naive float multiplication on at least one case", () => {
-    const decimals = sample(gen, 500, 31).filter((i) => i.prompt.includes("."));
-    let floatWouldBeWrong = 0;
-    for (const item of decimals) {
-      const [a, b] = item.prompt.replace("Multiply:", "").trim().split(" x ");
-      const naive = String(Number(a) * Number(b));
-      if (naive !== item.solution) floatWouldBeWrong++;
-    }
-    expect(floatWouldBeWrong).toBeGreaterThan(0);
-  });
-
-  test("factors never print a redundant trailing zero", () => {
-    for (const item of sample(gen, 400, 8)) {
-      expect(item.prompt).not.toMatch(/\d\.\d*0(\s|$)/);
-    }
-  });
-
-  test("all three forms appear", () => {
-    const items = sample(gen, 300, 2);
-    expect(items.some((i) => /  \d{2} x \d$/.test(i.prompt))).toBe(true);
-    expect(items.some((i) => /  \d{2} x \d{2}$/.test(i.prompt))).toBe(true);
-    expect(items.some((i) => i.prompt.includes("."))).toBe(true);
-  });
-});
-
-// ---------------------------------------------------------------------------
 // 8.EE.A.1 -- numeric substitution is the check
 // ---------------------------------------------------------------------------
 

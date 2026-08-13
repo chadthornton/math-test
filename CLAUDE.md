@@ -36,7 +36,7 @@ bunx tsc --noEmit
 bun run session --tier 1,2 --count 12 --seed 7    # interleaved, assembly rules
 bun run session --from-log --count 12             # re-drills logged misses
 bun run gen --standards 7.NS.A.1 --count 10       # named standards, no rules
-bun run drill --standard 5.NBT.B.5 --count 20     # one standard
+bun run drill --standard 7.NS.A.1 --count 20      # one standard
 ```
 
 Same `--seed` and `--date` produce byte-identical output. That is why `out/` is
@@ -87,10 +87,6 @@ avoid duplicating one thing across several call sites.
   `coeff² × radicand === original`, passes for `2 sqrt(18)` against `sqrt(72)` —
   the exact misconception the standard exists to catch. The verifier also asserts
   the radicand is squarefree. There is a test.
-- **Decimal products are allowed** despite "integer solutions only". That rule
-  bars fractions and non-terminating answers; `decimal × decimal` is an explicit
-  form in the item spec and decimal place count is its named misconception. All
-  decimal arithmetic is done in integers with the point placed afterwards.
 - **Tier 1 appears even under `--tier 2`.** brief.md §9 runs Gate 0 daily
   throughout, regardless of what else a session is for.
 - **`8.F.B.4` stories are hand-written templates.** Prose cannot be computed. All

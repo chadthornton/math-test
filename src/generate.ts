@@ -6,7 +6,7 @@
 
 export type Standard =
   | "7.NS.A.1"
-  | "5.NBT.B.5"
+  | "5.NBT.B.5" // no generator -- see registry.ts
   | "8.EE.A.1"
   | "8.EE.A.2"
   | "7.EE.A.1"

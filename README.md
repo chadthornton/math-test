@@ -26,7 +26,7 @@ Solutions are **computed and re-verified, never authored**.
 
 | Tier | Standards |
 |---|---|
-| 1 — root causes, daily | `7.NS.A.1` `5.NBT.B.5` |
+| 1 — root cause, daily | `7.NS.A.1` |
 | 2 — cheap, travel week | `8.EE.A.1` `8.EE.A.2` `8.F.A.1` |
 | 3 — procedural | `7.EE.A.1` `7.EE.B.4` `8.EE.C.7b` |
 | 4 — compound | `8.EE.C.8b` `8.F.B.4` |
@@ -44,7 +44,7 @@ bun test
 bun run session --tier 1,2 --count 12 --seed 7   # interleaved mixed set
 bun run session --from-log --count 12            # guarantees logged misses
 bun run gen --standards 7.NS.A.1 --count 10      # named standards, no rules
-bun run drill --standard 5.NBT.B.5 --count 20    # one standard, repetitive
+bun run drill --standard 7.NS.A.1 --count 20     # one standard, repetitive
 ```
 
 Flags: `--standards` `--standard` `--tier` `--count` `--seed` `--date` `--out`
@@ -68,7 +68,6 @@ src/
   cli.ts
   standards/
     7.NS.A.1.ts           signed arithmetic          tier 1
-    5.NBT.B.5.ts          multiplication fluency     tier 1
     8.EE.A.1.ts           exponent rules             tier 2
     8.EE.A.2.ts           square and cube roots      tier 2
     8.F.A.1.ts            function vocabulary        tier 2
@@ -107,7 +106,7 @@ Each item draws its own seed from the run RNG, so `Item.seed` reproduces a
 single item in isolation, and an item rejected by the verifier consumes one draw
 rather than desynchronising the stream.
 
-## Two places this build departs from the original spec, deliberately
+## Where this build departs from the original spec, deliberately
 
 **The 8.EE.A.2 verifier does more than the spec asked.** The retired spec gave it as
 `coeff² × radicand === original`. That check passes for `2 sqrt(18)` against
@@ -122,13 +121,6 @@ is still computed from the same parameters — the numbers, the model equation,
 the solution, the sentence. The verifier also checks that every number in the
 model actually appears in the story, which catches a template that drops or
 renames a value. That is the most a verifier can do about English.
-
-**Decimal products are not "fractional answers".** The global constraint says
-integer solutions only. Read literally that would delete the `decimal × decimal`
-form, whose whole purpose is the decimal-place-count misconception. It is read
-here as barring fractions and non-terminating answers — the no-calculator
-concern — so exact decimals stay. All decimal arithmetic is done in integers
-with the point placed afterwards, so no float error reaches the key.
 
 ## Spaced recall re-drills the exact problem
 
