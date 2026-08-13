@@ -39,7 +39,11 @@ function generate(rng: RNG): Item {
   const b = gap * multiple;
 
   // Bias c negative -- the item spec wants negative coefficients present.
-  const c = rng.bool(0.6) ? rng.int(-6, -1) : rng.int(1, 6);
+  // c and gap are each non-zero, but their SUM is a, and a === 0 prints a
+  // literal `0x` term: "0x - 3 = x - 7" is not variables-on-both-sides.
+  const drawC = () => (rng.bool(0.6) ? rng.int(-6, -1) : rng.int(1, 6));
+  let c = drawC();
+  while (c + gap === 0) c = drawC();
   const a = c + gap;
   const solution = rng.int(-9, 9);
   const d = gap * solution + b;
@@ -54,7 +58,9 @@ function generate(rng: RNG): Item {
     `  ${renderTerm(gap, "x")} = ${d - b}`,
     `Divide both sides by ${gap}:`,
     `  x = ${solution}`,
-    `Check: ${a} x ${solution} ${b >= 0 ? "+" : "-"} ${Math.abs(b)} = ${a * solution + b}, and ${c} x ${solution} ${d >= 0 ? "+" : "-"} ${Math.abs(d)} = ${c * solution + d}`,
+    `Check both sides with x = ${solution}:`,
+    `  ${a}(${solution})${renderConstant(b)} = ${a * solution + b}`,
+    `  ${c}(${solution})${renderConstant(d)} = ${c * solution + d}`,
   ];
 
   // The named error: b moved across without changing sign.
@@ -103,6 +109,9 @@ function verify(item: Item): boolean {
   const rightSlope = slope(sides[1]!);
   if (leftSlope === null || rightSlope === null) return false;
   if (leftSlope === rightSlope) return false;
+  // Both sides need a REAL x term. A zero coefficient still prints an `x`
+  // ("0x - 3 = x - 7"), so an includes("x") check passes it -- this does not.
+  if (leftSlope === 0 || rightSlope === 0) return false;
 
   // Item spec: negative coefficients present.
   if (!/-/.test(equation)) return false;

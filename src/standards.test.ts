@@ -436,6 +436,29 @@ describe("8.EE.C.7b", () => {
     }
   });
 
+  test("no item ever prints a zero coefficient", () => {
+    // `0x - 3 = x - 7` is not variables-on-both-sides, and it used to verify:
+    // "0x".includes("x") is true, so the old check waved it through.
+    for (const it of sample(gen, 3000, 1)) {
+      expect(it.prompt).not.toMatch(/(^|[^\d])0x/);
+    }
+  });
+
+  test("a zero coefficient is rejected even though it balances", () => {
+    const zeroed = {
+      standard: "8.EE.C.7b" as const,
+      tier: 3 as const,
+      seed: 1,
+      prompt: "Solve:  0x - 3 = x - 7",
+      solution: "x = 4",
+      work: ["s"],
+      trap: "`x = 9` -- y",
+    };
+    // It does balance -- 0(4) - 3 === 4 - 7 -- so only the slope check catches it.
+    expect(evaluate("0x - 3", { x: 4 })).toBe(evaluate("x - 7", { x: 4 })!);
+    expect(gen.verify(zeroed)).toBe(false);
+  });
+
   test("both sides carry a variable and a degenerate equation is rejected", () => {
     const base = {
       standard: "8.EE.C.7b" as const,
