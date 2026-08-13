@@ -81,6 +81,12 @@ The two-dates clause is the load-bearing half.
 prior state.** Passing blocked and failing mixed is the exact failure this
 project exists to correct; it must be visible rather than averaged away.
 
+**Display ruling (Aug 13):** render `NOT_STARTED` as **"no data"**, not as a
+deficit. `grade` logs correct answers only on previously-missed standards, so
+a standard she has never missed accumulates no evidence — `NOT_STARTED` means
+"never missed, never measured," not "can't do it." `sweep` is the triage tool
+for that gap.
+
 **Depends on:** real `log.md` entries. Not code — data.
 
 ---
@@ -139,8 +145,30 @@ regenerate it.
 (`NO_FLIP` / `OVER_FLIP`). This is per-standard work, not a global change: each
 one needs the misconception derived from that standard's own parameters.
 
+**Priority order (Aug 13):** now that `grade` exists, every signature-menu
+prompt is friction on the exact behaviour the log is starved for —
+auto-classification is what keeps grading at ~30 seconds per sheet. Do the
+three standards where the wrong answer derives most cleanly from the item's
+own parameters, one standard per commit, test-first:
+
+1. `7.NS.A.1` — `SIGN_RULE`, `DOUBLE_NEG`
+2. `7.EE.A.1` — `PARTIAL_DISTRIBUTE`, `SIGN_DISTRIBUTE`
+3. `8.EE.A.1` — `MULT_VS_ADD_EXP`
+
+Tier 1 and 2 dominate every session by assembly rule, so these three cover
+most of what she will actually miss.
+
 Only signatures **reachable from her written answer** belong there. See the
 limit recorded in `CLAUDE.md`.
+
+**Retrieval-first line on the reminder sheet — proposed, needs human sign-off
+on wording.** Add one line at the top of `reminder` output, e.g.: *"Before
+reading: say the rule out loud from memory, then check yourself below."*
+Rationale: re-reading feels fluent and encodes weakly; the sheet works better
+as a verification step than a first exposure. This is **authored prose** — the
+one content class a human verifies — and it changes how she uses the artifact,
+so the wording is the instructor's call, not the tool's. Two-line change in
+`src/reminders.ts` or `renderReminder` once approved.
 
 ---
 
