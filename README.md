@@ -34,8 +34,7 @@ Not built: progress state derived from the log (DERIVE), and what-to-work-on-nex
 (ADVISE). See the operations map in `CLAUDE.md` — and the unresolved question
 recorded there before building either.
 
-Three of brief.md §4's six exercise types have no render mode yet: the faded
-example, the reminder sheet, and the diagnostic sweep.
+All six of brief.md §4's exercise types have a render mode.
 
 Nothing from the non-goals list is present: no UI, no auth, no database, no
 adaptive difficulty, no spaced-repetition engine, no LaTeX. Output is
@@ -45,12 +44,15 @@ monospace ASCII in fenced blocks.
 
 ```bash
 bun install
-bun test             # 150 passing
+bun test             # 201 passing
 
 bun run session --tier 1,2 --count 12 --seed 7   # interleaved mixed set
 bun run session --from-log --count 12            # guarantees logged misses
 bun run gen --standards 7.NS.A.1 --count 10      # named standards, no rules
 bun run drill --standard 7.NS.A.1 --count 20     # one standard, repetitive
+bun run faded --standard 7.EE.B.4 --seed 3       # 5 levels, fading scaffold
+bun run reminder --standard 7.EE.B.4 --from-log  # one-page rule sheet
+bun run sweep --count 10 --seed 4                # multiple-choice triage
 ```
 
 Flags: `--standards` `--standard` `--tier` `--count` `--seed` `--date` `--out`
@@ -71,6 +73,9 @@ src/
   render.ts               markdown out
   registry.ts             the standard-to-generator map
   linear.ts               shared linear-expression reader/renderer
+  signatures.ts           brief.md §5 error-signature taxonomy
+  exercises.ts            faded example, reminder sheet, diagnostic sweep
+  reminders.ts            AUTHORED reminder prose -- review before trusting
   cli.ts
   standards/
     7.NS.A.1.ts           signed arithmetic          tier 1

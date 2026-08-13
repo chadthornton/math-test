@@ -30,13 +30,16 @@ appear, check whether its verifier is rejecting it — that has happened twice
 
 ```bash
 bun install
-bun test                                          # 150 tests
+bun test                                          # 201 tests
 bunx tsc --noEmit
 
 bun run session --tier 1,2 --count 12 --seed 7    # interleaved, assembly rules
 bun run session --from-log --count 12             # re-drills logged misses
 bun run gen --standards 7.NS.A.1 --count 10       # named standards, no rules
 bun run drill --standard 7.NS.A.1 --count 20      # one standard
+bun run faded --standard 7.EE.B.4 --seed 3        # brief.md §6 ladder
+bun run reminder --standard 7.EE.B.4 --from-log   # brief.md §5 rule sheet
+bun run sweep --count 10 --seed 4                 # brief.md §4 MC triage
 ```
 
 Same `--seed` and `--date` produce byte-identical output. That is why `out/` is
@@ -50,6 +53,10 @@ the generate/verify loop, shared verifier helpers.
 `src/assemble.ts` — session builder + `log.md` parser.
 `src/render.ts` — markdown out. `src/registry.ts` — standard → generator map.
 `src/linear.ts` — shared reader that evaluates printed linear expressions.
+`src/signatures.ts` — brief.md §5's taxonomy as data.
+`src/exercises.ts` — the other three render modes from brief.md §4.
+`src/reminders.ts` — **authored** reminder prose. Read the header before
+touching it: it is the only content here no verifier can check.
 `src/standards/<code>.ts` — one module per standard, ten of them. `5.NBT.B.5`
 covers the multi-digit algorithm only (smallest item `12 x 2`); the 1-10 times
 table is brief.md §3's "automaticity" and is drilled by a separate app.
