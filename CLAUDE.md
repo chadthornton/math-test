@@ -9,6 +9,17 @@ retake. TypeScript + Bun, no framework, markdown to stdout or file.
   types (§4), the error-signature taxonomy (§5), progress states and the gate
   criterion (§7), the error-log format (§8), the day-by-day plan (§9). **This is
   the source of truth for anything pedagogical.**
+- `workflow-spec.md` — **prescriptive.** `grade`, `progress`, the real fluency
+  drill, and `today` get built from it, in that order. It also records the
+  rulings that resolved its open questions.
+- `functional-overview.md` — **orientation only. Do not implement from it.**
+  Useful for understanding what the six sections are for and how the loop fits
+  together; its status claims were written from outside the repo and have been
+  wrong repeatedly.
+
+**The repo is authoritative wherever any of these disagree with the code.**
+Both of the above were corrected against it on Aug 13; assume the next revision
+will need the same treatment.
 
 ## The one rule that matters
 
@@ -227,20 +238,40 @@ format. A log written with signatures reads as zero misses and `--from-log`
 degrades silently to an ordinary session. Fixing it is a behaviour change, not a
 documentation one, and has not been done.
 
-### Deferred: predicted errors
+### Predicted errors
 
-A later upgrade, not a blocker. Items would carry the wrong answers each known
-misconception produces:
+`Item.predictedErrors` maps an error signature to the wrong answer that
+misconception produces, derived from the same parameters as the correct answer:
 
 ```ts
-predictedErrors: Record<Signature, string>
-// -3x + 2 > 11  ->  { NO_FLIP: "x > -3", SIGN_MOVE: "x < -13/3" }
+predictedErrors: { NO_FLIP: "x > -3" }
+// -3x + 2 > 11 -> not flipping gives x > -3, computably
 ```
 
-Grading then classifies automatically instead of requiring judgment, and logging
-friction approaches zero — which is what makes logging survive a real week. **Do
-not build this before real entries exist.** The predicted-error tables should be
-derived from failures she actually makes, not from failures we imagine.
+`grade` matches what she wrote against these and classifies automatically,
+falling back to a numbered menu of that standard's signatures when nothing
+matches. Some signatures will never be computable; the menu is the right answer
+for those, not a failure.
+
+**Two rules.**
+
+**Only signatures reachable from her written answer belong here.** `7.EE.B.4`
+carries `NO_FLIP` / `OVER_FLIP` and deliberately not `WRONG_DOT` /
+`WRONG_ARROW`: those are graphing errors, she can write a correct inequality
+and still draw the number line wrong, and `grade` reads one text field.
+Listing them would imply coverage the classifier does not have. They wait for
+`grade` to take a separate observation for graphing items.
+
+**Where a distractor and a prediction coincide, derive one from the other.**
+`7.EE.B.4`'s `trap` is `predictedErrors[signature]`, not a second computation
+of the same string. Two computations drift.
+
+Built for `7.EE.B.4`. The rest is per-standard work, not a global change.
+
+*Reversal, Aug 13: this section previously said not to build predicted errors
+until real log entries existed. That was wrong — they are computed from item
+parameters, not inferred from her behaviour, so there was never anything to
+wait for, and they are what makes capture cheap enough to survive ten days.*
 
 ## Progress states
 

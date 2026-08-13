@@ -4,6 +4,8 @@
 // standard -- standard modules implement Generator and get driven by
 // generateItems() below.
 
+import { SIGNATURES } from "./signatures.ts";
+
 export type Standard =
   | "7.NS.A.1"
   | "5.NBT.B.5"
@@ -32,6 +34,21 @@ export interface Item {
    * instruction the log should not repeat -- otherwise render.ts derives it.
    */
   logLabel?: string;
+  /**
+   * Error signature -> the wrong answer that misconception produces, derived
+   * from the same parameters as the correct answer. `grade` matches what she
+   * wrote against these to classify automatically, falling back to a menu.
+   *
+   * This is arithmetic, not a guess about her psychology: skipping the flip
+   * on -3x + 2 > 11 gives x > -3, computably.
+   *
+   * LIMIT: only signatures reachable from her WRITTEN ANSWER belong here.
+   * Graphing errors (WRONG_DOT, WRONG_ARROW) are not -- she can write a
+   * correct inequality and draw the number line wrong, and grade captures a
+   * single text field. Listing them would imply coverage that does not
+   * exist. They wait for grade to take a separate observation for graphing.
+   */
+  predictedErrors?: Readonly<Record<string, string>>;
 }
 
 export interface Session {
@@ -158,6 +175,15 @@ export function checkCommon(item: Item, standard: Standard, tier: Tier): boolean
   const wrong = trapAnswer(item.trap);
   if (wrong === null) return false;
   if (wrong.trim() === item.solution.trim()) return false;
+
+  // Every predicted error must name a signature the taxonomy assigns to this
+  // standard, and must not be the correct answer -- a "wrong answer" equal to
+  // the right one would auto-classify a correct response as a miss.
+  for (const [signature, predicted] of Object.entries(item.predictedErrors ?? {})) {
+    if (!SIGNATURES[standard].includes(signature)) return false;
+    if (!isAscii(predicted)) return false;
+    if (predicted.trim() === item.solution.trim()) return false;
+  }
   return true;
 }
 

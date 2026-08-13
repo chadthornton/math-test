@@ -399,15 +399,23 @@ describe("7.EE.A.1", () => {
 
 describe("7.EE.B.4", () => {
   const gen = REGISTRY["7.EE.B.4"]!;
-  const item = (prompt: string, solution: string, trap: string) => ({
-    standard: "7.EE.B.4" as const,
-    tier: 3 as const,
-    seed: 7,
-    prompt,
-    solution,
-    work: ["step"],
-    trap,
-  });
+  // trap and predictedErrors are the same string by construction, so the
+  // helper derives the prediction from the trap rather than restating it.
+  const item = (prompt: string, solution: string, trapText: string) => {
+    const raw = /:\s+(-?\d*)x/.exec(prompt)![1]!;
+    const a = raw === "" ? 1 : raw === "-" ? -1 : Number(raw);
+    const wrong = /^`([^`]+)`/.exec(trapText)![1]!;
+    return {
+      standard: "7.EE.B.4" as const,
+      tier: 3 as const,
+      seed: 7,
+      prompt,
+      solution,
+      work: ["step"],
+      trap: trapText,
+      predictedErrors: { [a < 0 ? "NO_FLIP" : "OVER_FLIP"]: wrong },
+    };
+  };
   const ask = "Solve, then describe the graph:  ";
 
   test("catches a missing flip on a negative coefficient", () => {
@@ -462,6 +470,71 @@ describe("7.EE.B.4", () => {
           "`x <= 4 (closed dot at 4, arrow right)` -- y",
         ),
       ),
+    ).toBe(false);
+  });
+
+  test("predictedErrors names the signature the sign of a implies", () => {
+    for (const it of sample(gen, 400, 51)) {
+      const raw = /:\s+(-?\d*)x/.exec(it.prompt)![1]!;
+      const a = raw === "" ? 1 : raw === "-" ? -1 : Number(raw);
+      const keys = Object.keys(it.predictedErrors ?? {});
+      expect(keys).toHaveLength(1);
+      // Negative coefficient: not flipping is NO_FLIP. Positive: flipping
+      // anyway is OVER_FLIP. Same arithmetic, different name.
+      expect(keys[0]).toBe(a < 0 ? "NO_FLIP" : "OVER_FLIP");
+    }
+  });
+
+  test("the predicted answer is what the misconception actually produces", () => {
+    // Recomputed from the PRINTED problem, not from the generator: solve it,
+    // then apply the flip rule wrongly, and check we land on the prediction.
+    const FLIP: Record<string, string> = { "<": ">", ">": "<", "<=": ">=", ">=": "<=" };
+    for (const it of sample(gen, 400, 53)) {
+      const m = /:\s+(-?\d*)x\s*([+-])\s*(\d+)\s*(<=|>=|<|>)\s*(-?\d+)$/.exec(it.prompt)!;
+      const a = m[1] === "" ? 1 : m[1] === "-" ? -1 : Number(m[1]);
+      const b = (m[2] === "-" ? -1 : 1) * Number(m[3]);
+      const op = m[4]!;
+      const c = Number(m[5]);
+      const boundary = (c - b) / a;
+
+      // The mistake: use the printed operator unchanged when a < 0 (no flip),
+      // or flip it when a > 0 (flipped for no reason).
+      const wrongOp = a < 0 ? op : FLIP[op]!;
+      const closed = wrongOp.includes("=");
+      const right = wrongOp.startsWith(">");
+      const expected =
+        `x ${wrongOp} ${boundary} (${closed ? "closed" : "open"} dot at ${boundary},` +
+        ` arrow ${right ? "right" : "left"})`;
+
+      const predicted = Object.values(it.predictedErrors ?? {})[0];
+      expect(predicted).toBe(expected);
+      expect(predicted).not.toBe(it.solution);
+    }
+  });
+
+  test("the key's distractor IS the prediction, not a second computation", () => {
+    for (const it of sample(gen, 300, 57)) {
+      expect(trapAnswer(it.trap)).toBe(Object.values(it.predictedErrors!)[0]!);
+    }
+  });
+
+  test("graphing signatures are deliberately absent", () => {
+    // WRONG_DOT and WRONG_ARROW are unreachable from a single written answer:
+    // she can write the inequality correctly and still draw the line wrong.
+    for (const it of sample(gen, 200, 59)) {
+      const keys = Object.keys(it.predictedErrors ?? {});
+      expect(keys).not.toContain("WRONG_DOT");
+      expect(keys).not.toContain("WRONG_ARROW");
+    }
+  });
+
+  test("a prediction equal to the answer, or off-taxonomy, is rejected", () => {
+    const base = sample(gen, 1, 61)[0]!;
+    expect(
+      gen.verify({ ...base, predictedErrors: { NO_FLIP: base.solution } }),
+    ).toBe(false);
+    expect(
+      gen.verify({ ...base, predictedErrors: { PARTIAL_DISTRIBUTE: "x < 3" } }),
     ).toBe(false);
   });
 

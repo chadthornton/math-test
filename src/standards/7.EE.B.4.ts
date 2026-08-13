@@ -94,9 +94,19 @@ function generate(rng: RNG): Item {
     `Graph: ${isClosed(solved) ? "CLOSED" : "OPEN"} dot at ${boundary} (${isClosed(solved) ? "the boundary is included" : "the boundary is not included"}), arrow ${pointsRight(solved) ? "RIGHT" : "LEFT"}.`,
   );
 
-  // One computation, two diagnoses: reversing the final sign is either the
-  // missing flip or a flip applied where none was needed.
-  const reversed = FLIPPED[solved];
+  // One computation, two diagnoses. Reversing the final sign is the missing
+  // flip when the coefficient is negative, and a flip applied where none was
+  // needed when it is positive -- so which signature it is depends on sign(a),
+  // and the arithmetic is identical either way.
+  //
+  // Only signatures reachable from her WRITTEN ANSWER go here. WRONG_DOT and
+  // WRONG_ARROW are graphing errors: she can write a correct inequality and
+  // still draw the line wrong, and grade reads one text field. Listing them
+  // would claim coverage the classifier does not have.
+  const flipSignature = a < 0 ? "NO_FLIP" : "OVER_FLIP";
+  const predictedErrors = {
+    [flipSignature]: describe(FLIPPED[solved], boundary),
+  };
   const meaning =
     a < 0
       ? `did not flip the sign. Dividing both sides by ${a}, a negative, reverses the inequality`
@@ -107,7 +117,10 @@ function generate(rng: RNG): Item {
     prompt: `${DIRECTIVE}  ${question}`,
     solution: describe(solved, boundary),
     work,
-    trap: trap(describe(reversed, boundary), meaning),
+    // Derived, not recomputed: the distractor on the key and the prediction
+    // grade classifies against must be the same string or they will drift.
+    trap: trap(predictedErrors[flipSignature]!, meaning),
+    predictedErrors,
     tier: TIER,
     seed: rng.seed,
   };
@@ -160,6 +173,17 @@ function verify(item: Item): boolean {
 
   const wrong = trapAnswer(item.trap);
   if (wrong === null || wrong === item.solution) return false;
+
+  // The predicted error must be exactly what the printed problem produces
+  // when the flip rule is misapplied -- recomputed here from the parsed
+  // coefficient, not taken from the generator.
+  const expectedSignature = a < 0 ? "NO_FLIP" : "OVER_FLIP";
+  const predicted = item.predictedErrors?.[expectedSignature];
+  if (predicted === undefined) return false;
+  if (Object.keys(item.predictedErrors ?? {}).length !== 1) return false;
+  if (predicted !== describe(FLIPPED[solved], boundary)) return false;
+  // And the key's distractor must be that same string, not a second copy.
+  if (wrong !== predicted) return false;
 
   return true;
 }
