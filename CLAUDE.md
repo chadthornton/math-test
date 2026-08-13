@@ -17,9 +17,13 @@ retake. TypeScript + Bun, no framework, markdown to stdout or file.
   together; its status claims were written from outside the repo and have been
   wrong repeatedly.
 
+- `NEXT.md` — the work queue, in dependency order, with what "done" means for
+  each and the decisions already ruled on. **Start here** when picking up work;
+  it says what is next and where that thing is specified.
+
 **The repo is authoritative wherever any of these disagree with the code.**
-Both of the above were corrected against it on Aug 13; assume the next revision
-will need the same treatment.
+Both specs were corrected against it on Aug 13; assume the next revision will
+need the same treatment.
 
 ## The one rule that matters
 

@@ -8,6 +8,9 @@ Solutions are **computed and re-verified, never authored**.
   anything pedagogical.**
 - `CLAUDE.md` — the working notes: invariants, conventions, and the operations
   map. Loaded automatically by Claude Code.
+- `NEXT.md` — the work queue and what "done" means for each item.
+- `workflow-spec.md` — prescriptive; `grade`, `progress`, `drill` and `today`
+  build from it. `functional-overview.md` — orientation only.
 
 ---
 
