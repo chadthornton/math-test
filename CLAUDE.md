@@ -30,7 +30,7 @@ appear, check whether its verifier is rejecting it — that has happened twice
 
 ```bash
 bun install
-bun test                                          # 138 tests
+bun test                                          # 150 tests
 bunx tsc --noEmit
 
 bun run session --tier 1,2 --count 12 --seed 7    # interleaved, assembly rules
@@ -50,7 +50,9 @@ the generate/verify loop, shared verifier helpers.
 `src/assemble.ts` — session builder + `log.md` parser.
 `src/render.ts` — markdown out. `src/registry.ts` — standard → generator map.
 `src/linear.ts` — shared reader that evaluates printed linear expressions.
-`src/standards/<code>.ts` — one module per standard, ten of them.
+`src/standards/<code>.ts` — one module per standard, ten of them. `5.NBT.B.5`
+covers the multi-digit algorithm only (smallest item `12 x 2`); the 1-10 times
+table is brief.md §3's "automaticity" and is drilled by a separate app.
 
 `registry.ts` and `linear.ts` were not in the original file plan; both exist to
 avoid duplicating one thing across several call sites.

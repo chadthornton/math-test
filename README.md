@@ -13,14 +13,14 @@ Solutions are **computed and re-verified, never authored**.
 
 ## Status
 
-**Nine standards built and verified.** Multiplication (`5.NBT.B.5`) is
-deliberately absent — brief.md §3 says it is drilled by a separate tool and
-must not be duplicated here.
+**Ten standards built and verified.** `5.NBT.B.5` covers multi-digit
+multiplication only — the 1-10 times table is brief.md §3's "automaticity"
+and is drilled by a separate app, so the smallest item here is `12 x 2`.
 
 | Tier | Standards | Role |
 |---|---|---|
 | 1 | `7.NS.A.1` | Gate 0. brief.md §9 runs it daily throughout. |
-| 2 | `8.EE.A.1` `8.EE.A.2` `8.F.A.1` | near-independent of Gate 0, can run early |
+| 2 | `5.NBT.B.5` `8.EE.A.1` `8.EE.A.2` `8.F.A.1` | near-independent of Gate 0, can run early |
 | 3 | `7.EE.A.1` `7.EE.B.4` `8.EE.C.7b` | the dependent chain |
 | 4 | `8.EE.C.8b` `8.F.B.4` | compound; require everything above |
 
@@ -45,7 +45,7 @@ monospace ASCII in fenced blocks.
 
 ```bash
 bun install
-bun test             # 140 passing
+bun test             # 150 passing
 
 bun run session --tier 1,2 --count 12 --seed 7   # interleaved mixed set
 bun run session --from-log --count 12            # guarantees logged misses
@@ -74,6 +74,7 @@ src/
   cli.ts
   standards/
     7.NS.A.1.ts           signed arithmetic          tier 1
+    5.NBT.B.5.ts          multi-digit multiplication tier 2
     8.EE.A.1.ts           exponent rules             tier 2
     8.EE.A.2.ts           square and cube roots      tier 2
     8.F.A.1.ts            function vocabulary        tier 2

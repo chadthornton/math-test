@@ -1,9 +1,8 @@
 // The standards this tool generates.
 //
-// 5.NBT.B.5 (multiplication fluency) is deliberately absent. brief.md §3:
-// multiplication automaticity is handled by a separate drilling tool and is
-// not duplicated here. The standard still exists in the Standard union and in
-// the signature taxonomy, so log entries referencing it still parse.
+// 5.NBT.B.5 covers the multi-digit ALGORITHM only (smallest item: 12 x 2).
+// The 1-10 times table is drilled by a separate app -- brief.md §3's
+// "automaticity" -- and is never generated here.
 //
 // Not in the original file plan -- assemble.ts, cli.ts and the tests all need the
 // same map, and passing it around or duplicating it in each was worse.
@@ -11,6 +10,7 @@
 import type { Generator, Standard } from "./generate.ts";
 
 import signedArithmetic from "./standards/7.NS.A.1.ts";
+import multiplication from "./standards/5.NBT.B.5.ts";
 import exponents from "./standards/8.EE.A.1.ts";
 import roots from "./standards/8.EE.A.2.ts";
 import functionVocabulary from "./standards/8.F.A.1.ts";
@@ -22,6 +22,7 @@ import wordProblems from "./standards/8.F.B.4.ts";
 
 export const REGISTRY: Partial<Record<Standard, Generator>> = {
   "7.NS.A.1": signedArithmetic,
+  "5.NBT.B.5": multiplication,
   "8.EE.A.1": exponents,
   "8.EE.A.2": roots,
   "8.F.A.1": functionVocabulary,
