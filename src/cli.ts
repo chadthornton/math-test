@@ -3,7 +3,10 @@
 //   bun run gen     --standards 7.NS.A.1,8.EE.A.1 --count 10 --seed 42
 //   bun run session --tier 1,2 --count 12 --seed 7
 //   bun run session --from-log --count 12
-//   bun run drill   --standard 7.NS.A.1 --count 20
+//   bun run drill    --standard 7.NS.A.1 --count 20
+//   bun run faded    --standard 7.EE.B.4 --seed 3      brief.md §6 ladder
+//   bun run reminder --standard 7.EE.B.4               brief.md §5 sheet
+//   bun run sweep    --count 10 --seed 4               brief.md §4 MC triage
 //
 // All commands emit two files to out/: the set and the key.
 
@@ -13,13 +16,24 @@ import { join } from "node:path";
 import {
   RNG,
   generateItems,
+  shuffle,
+  type Item,
   type Session,
   type Standard,
   type Tier,
 } from "./generate.ts";
 import { assemble, misses, parseLog, unknownSignatures } from "./assemble.ts";
+import {
+  buildSweep,
+  renderFaded,
+  renderFadedKey,
+  renderReminder,
+  renderSweep,
+  renderSweepKey,
+} from "./exercises.ts";
 import { renderKey, renderSet } from "./render.ts";
 import { BUILT, generatorFor } from "./registry.ts";
+import { isKnown, tokensIn } from "./signatures.ts";
 
 const LOG_PATH = "log.md";
 
@@ -60,6 +74,19 @@ function integer(raw: string | undefined, fallback: number, label: string): numb
 
 function list(raw: string | undefined): string[] {
   return (raw ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+}
+
+/** Write one or two documents to out/, honouring --out and --no-write. */
+function writeOut(args: Args, stem: string, set: string, key?: string): void {
+  if (args.bare.has("no-write")) return;
+  const outDir = args.flags.get("out") ?? "out";
+  mkdirSync(outDir, { recursive: true });
+  writeFileSync(join(outDir, `${stem}.md`), set);
+  process.stderr.write(`\nwrote ${join(outDir, `${stem}.md`)}\n`);
+  if (key !== undefined) {
+    writeFileSync(join(outDir, `${stem}-key.md`), key);
+    process.stderr.write(`wrote ${join(outDir, `${stem}-key.md`)}\n`);
+  }
 }
 
 function emit(
@@ -173,9 +200,73 @@ function main(): void {
       return;
     }
 
+    case "faded": {
+      // brief.md §6: five levels, same type, different numbers.
+      const name = args.flags.get("standard");
+      if (!name) throw new Error("faded needs --standard");
+      const gen = generatorFor(name);
+      const rng = new RNG(seed);
+      const ladder = generateItems(gen, rng, 4);
+
+      // Level 5: one item of the type, hidden among five that are not.
+      const others = BUILT.filter((s) => s !== name);
+      const decoys = others
+        .slice(0, 5)
+        .map((s) => generateItems(generatorFor(s), rng, 1)[0]!);
+      const mixed = shuffle([generateItems(gen, rng, 1)[0]!, ...decoys], rng);
+
+      const sheet = { standard: name as Standard, ladder, mixed, date, seed };
+      const set = renderFaded(sheet);
+      const key = renderFadedKey(sheet);
+      process.stdout.write(set + "\n" + key);
+      writeOut(args, `${date}-faded-${name}-seed${seed}`, set, key);
+      return;
+    }
+
+    case "reminder": {
+      // brief.md §5. Traps she has hit are promoted; see rankTraps().
+      const name = args.flags.get("standard");
+      if (!name) throw new Error("reminder needs --standard");
+      const gen = generatorFor(name);
+      const example = generateItems(gen, new RNG(seed), 1)[0]!;
+
+      const hit = new Set<string>();
+      if (args.bare.has("from-log") && existsSync(LOG_PATH)) {
+        for (const entry of misses(parseLog(readFileSync(LOG_PATH, "utf8")))) {
+          if (entry.standard === name) {
+            for (const t of tokensIn(entry.outcome)) if (isKnown(t)) hit.add(t);
+          }
+        }
+        process.stderr.write(`${hit.size} trap(s) promoted from log.md\n`);
+      }
+
+      const sheet = renderReminder(name as Standard, example, hit);
+      process.stdout.write(sheet);
+      writeOut(args, `${date}-reminder-${name}`, sheet);
+      return;
+    }
+
+    case "sweep": {
+      // brief.md §4: MC, many standards, fast, distractors encode misconceptions.
+      const count = integer(args.flags.get("count"), 10, "count");
+      const rng = new RNG(seed);
+      const pool: Item[] = [];
+      // Four per standard so every question has siblings to draw options from;
+      // with fewer, some questions came out with only two choices.
+      for (const s of BUILT) pool.push(...generateItems(generatorFor(s), rng, 4));
+      const chosen = shuffle(pool, rng).slice(0, count);
+      const questions = buildSweep(chosen, rng);
+
+      const set = renderSweep(questions, date, seed);
+      const key = renderSweepKey(questions, date, seed);
+      process.stdout.write(set + "\n" + key);
+      writeOut(args, `${date}-sweep-seed${seed}`, set, key);
+      return;
+    }
+
     default:
       throw new Error(
-        `unknown command "${args.command}". Try: gen, session, drill. ` +
+        `unknown command "${args.command}". Try: gen, session, drill, faded, reminder, sweep. ` +
           `Standards built so far: ${BUILT.join(", ")}`,
       );
   }

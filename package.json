@@ -6,6 +6,9 @@
     "gen": "bun run src/cli.ts gen",
     "session": "bun run src/cli.ts session",
     "drill": "bun run src/cli.ts drill",
+    "faded": "bun run src/cli.ts faded",
+    "reminder": "bun run src/cli.ts reminder",
+    "sweep": "bun run src/cli.ts sweep",
     "test": "bun test"
   },
   "devDependencies": {

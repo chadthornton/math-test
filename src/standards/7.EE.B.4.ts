@@ -73,8 +73,12 @@ function generate(rng: RNG): Item {
   const question = `${renderTerm(a, "x")}${renderConstant(b)} ${op} ${c}`;
 
   const work = [
-    `Subtract ${b} from both sides:  ${renderTerm(a, "x")} ${op} ${c} - ${b}  =  ${renderTerm(a, "x")} ${op} ${a * boundary}`,
-    `Divide both sides by ${a}.`,
+    `Treat it exactly like an equation until the very last step.`,
+    b < 0
+      ? `${b} is negative, so clearing it means ADDING ${Math.abs(b)} to both sides:`
+      : `Subtract ${b} from both sides:`,
+    `  ${renderTerm(a, "x")} ${op} ${a * boundary}`,
+    `Now divide both sides by ${a}.`,
   ];
   if (a < 0) {
     work.push(
