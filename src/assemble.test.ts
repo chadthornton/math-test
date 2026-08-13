@@ -18,7 +18,7 @@ const build = (over: Partial<Parameters<typeof assemble>[0]> = {}) =>
   assemble({ seed: 42, date: "2026-08-04", ...over });
 
 // ---------------------------------------------------------------------------
-// the three assembler tests from spec.md
+// the three specified assembler tests
 // ---------------------------------------------------------------------------
 
 describe("assembler rules", () => {

@@ -91,7 +91,7 @@ function generate(rng: RNG): Item {
 }
 
 // ---------------------------------------------------------------------------
-// verification -- evaluate original and simplified at 5 random x, per spec.md
+// verification -- evaluate original and simplified at 5 random x
 // ---------------------------------------------------------------------------
 
 function verify(item: Item): boolean {

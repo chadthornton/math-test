@@ -1,6 +1,6 @@
 // Seeded RNG, the core data model, and the generate/verify loop.
 //
-// Build order step 1 (spec.md). Nothing here knows about any particular
+// Nothing here knows about any particular
 // standard -- standard modules implement Generator and get driven by
 // generateItems() below.
 

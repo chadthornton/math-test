@@ -146,7 +146,7 @@ describe("8.EE.A.1", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 8.EE.A.2 -- the half spec.md leaves out
+// 8.EE.A.2 -- the half the spec left out
 // ---------------------------------------------------------------------------
 
 describe("8.EE.A.2", () => {
@@ -162,7 +162,7 @@ describe("8.EE.A.2", () => {
   });
 
   test("a non-maximal extraction is rejected even though coeff^2 x radicand matches", () => {
-    // 2^2 x 18 === 72, so spec.md's stated check alone would pass this.
+    // 2^2 x 18 === 72, so the specified check alone would pass this.
     expect(2 ** 2 * 18).toBe(72);
     expect(gen.verify(item("2 sqrt(18)", "`6 sqrt(2)` -- y"))).toBe(false);
     expect(gen.verify(item("3 sqrt(8)", "`6 sqrt(2)` -- y"))).toBe(false);
@@ -291,7 +291,7 @@ describe("8.F.A.1", () => {
 });
 
 // ---------------------------------------------------------------------------
-// batch-level constraints: "negative ... in >= half of items" (spec.md)
+// batch-level constraints: "negative ... in >= half of items"
 // ---------------------------------------------------------------------------
 
 describe("balance constraints", () => {

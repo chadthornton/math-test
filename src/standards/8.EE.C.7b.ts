@@ -75,7 +75,7 @@ function generate(rng: RNG): Item {
 }
 
 // ---------------------------------------------------------------------------
-// verification -- substitute the claimed x into both sides, per spec.md
+// verification -- substitute the claimed x into both sides
 // ---------------------------------------------------------------------------
 
 function verify(item: Item): boolean {

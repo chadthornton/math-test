@@ -1,8 +1,8 @@
-// Markdown out. Build order step 2 (spec.md).
+// Markdown out.
 //
 // Target format is the existing sheets: fenced code blocks for all math,
 // one item per block, a rule between items. Monospace ASCII only -- no LaTeX
-// (spec.md non-goals).
+// (a standing non-goal -- see CLAUDE.md).
 //
 // The student sheet does NOT label items with their standard. brief.md §4:
 // a heading that names the procedure is exactly what blocked practice trains,

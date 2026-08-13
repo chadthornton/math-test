@@ -1,6 +1,6 @@
 // The standards that exist so far. Build order steps 5 and 6 add the rest.
 //
-// Not in spec.md's file tree -- assemble.ts, cli.ts and the tests all need the
+// Not in the original file plan -- assemble.ts, cli.ts and the tests all need the
 // same map, and passing it around or duplicating it in each was worse.
 
 import type { Generator, Standard } from "./generate.ts";

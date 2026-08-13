@@ -141,7 +141,7 @@ function generate(rng: RNG): Item {
 }
 
 // ---------------------------------------------------------------------------
-// verification -- substitute the solution into the model equation, per spec.md
+// verification -- substitute the solution into the model equation
 // ---------------------------------------------------------------------------
 
 const SOLUTION_RE =
@@ -155,7 +155,7 @@ function verify(item: Item): boolean {
   const [, equation, variable, rawValue, sentence] = claimed;
   const value = Number(rawValue);
 
-  // spec.md: substitute the solution into the model equation.
+  // Substitute the solution into the model equation.
   if (!sidesAgree(equation!, { [variable!]: value })) return false;
 
   // The equation must actually use the variable it claims to solve for.

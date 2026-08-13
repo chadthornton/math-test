@@ -218,7 +218,7 @@ function generate(rng: RNG): Item {
 }
 
 // ---------------------------------------------------------------------------
-// verification -- independent recomputation, per spec.md
+// verification -- independent recomputation
 // ---------------------------------------------------------------------------
 
 const HEAD_RE = /^(?:\((-?\d+)\)|(-?\d+))/;

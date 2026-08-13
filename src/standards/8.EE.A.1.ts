@@ -10,8 +10,8 @@
 // Tier 2: near-independent of Gate 0 in brief.md §3's graph, so it can run
 // early and in parallel with everything else.
 //
-// spec.md's verifier for this standard is "substitute a numeric base into both
-// forms, assert equal". That is done literally below: the printed problem and
+// The specified verifier for this standard is "substitute a numeric base into
+// both forms, assert equal". That is done literally below: the printed problem and
 // the printed answer are each parsed and evaluated at two different bases as
 // exact BigInt rationals. Nothing in the check knows the exponent rules, so a
 // wrong rule in the generator cannot agree with itself.

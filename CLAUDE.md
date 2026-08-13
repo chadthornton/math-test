@@ -9,7 +9,6 @@ retake. TypeScript + Bun, no framework, markdown to stdout or file.
   types (§4), the error-signature taxonomy (§5), progress states and the gate
   criterion (§7), the error-log format (§8), the day-by-day plan (§9). **This is
   the source of truth for anything pedagogical.**
-- `spec.md` — the build spec. Data model, per-standard verifier rules, non-goals.
 
 ## The one rule that matters
 
@@ -53,8 +52,8 @@ the generate/verify loop, shared verifier helpers.
 `src/linear.ts` — shared reader that evaluates printed linear expressions.
 `src/standards/<code>.ts` — one module per standard, ten of them.
 
-`registry.ts` and `linear.ts` are not in spec.md's file tree; both exist to avoid
-duplicating one thing across several call sites.
+`registry.ts` and `linear.ts` were not in the original file plan; both exist to
+avoid duplicating one thing across several call sites.
 
 ## Conventions
 
@@ -82,9 +81,9 @@ duplicating one thing across several call sites.
 5. If the spec states a constraint on a *batch* rather than an item ("negative
    coefficients in ≥ half of items"), use the optional `balance` field.
 
-## Deliberate departures from spec.md — do not "fix" these
+## Deliberate departures from the original spec — do not "fix" these
 
-- **`8.EE.A.2` verifies more than the spec asks.** The stated check,
+- **`8.EE.A.2` verifies more than the spec asked.** The retired check was
   `coeff² × radicand === original`, passes for `2 sqrt(18)` against `sqrt(72)` —
   the exact misconception the standard exists to catch. The verifier also asserts
   the radicand is squarefree. There is a test.
@@ -98,7 +97,7 @@ duplicating one thing across several call sites.
   numbers, the model, the solution and the sentence still are, and the verifier
   checks every number in the model appears in the story.
 
-## Non-goals (spec.md) — do not build
+## Non-goals — do not build
 
 Web UI, dashboards, progress visualizations, auth, accounts, multi-user, a
 database of any kind, adaptive difficulty, a real spaced-repetition

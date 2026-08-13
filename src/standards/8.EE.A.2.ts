@@ -11,7 +11,7 @@
 // "travel week, no worksheets" framing is gone -- brief.md §1 now says
 // printer access is available throughout.)
 //
-// NOTE on the verifier. spec.md gives it as `coeff^2 x radicand === original`.
+// NOTE on the verifier. The spec gave it as `coeff^2 x radicand === original`.
 // That check passes for 2 sqrt(18) against sqrt(72) -- 4 x 18 = 72 -- which is
 // precisely the misconception this standard is built to catch. So the verifier
 // below adds the missing half: the radicand must also be squarefree, which is
@@ -198,9 +198,9 @@ function verify(item: Item): boolean {
     if (answer.radicand !== 1) return false;
     if (answer.coefficient ** 3 !== original) return false;
   } else {
-    // spec.md's stated check: coeff^2 x radicand === original.
+    // The specified check: coeff^2 x radicand === original.
     if (answer.coefficient ** 2 * answer.radicand !== original) return false;
-    // The half spec.md leaves out. Without this, 2 sqrt(18) verifies against
+    // The half the spec left out. Without this, 2 sqrt(18) verifies against
     // sqrt(72) and the answer key ships the misconception.
     if (!isSquarefree(answer.radicand)) return false;
     // Item spec: the simplify form needs a perfect-square factor >= 4.

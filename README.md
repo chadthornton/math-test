@@ -3,7 +3,11 @@
 Verified, interleaved practice sets for the algebra placement retake.
 Solutions are **computed and re-verified, never authored**.
 
-- `brief.md` — the domain reference. Standards, diagnosis, item parameters, progression.
+- `brief.md` — the domain reference. Standards, diagnosis, exercise types, the
+  error-signature taxonomy, progress states, the plan. **Source of truth for
+  anything pedagogical.**
+- `CLAUDE.md` — the working notes: invariants, conventions, and the operations
+  map. Loaded automatically by Claude Code.
 
 ---
 
@@ -54,7 +58,6 @@ taken can be regenerated exactly — for the tutor, or to diff two sessions.
 
 ```
 brief.md                  domain reference
-spec.md                   build spec
 log.md                    error log (brief.md §8 format)
 src/
   generate.ts             seeded RNG, data model, generate/verify loop
@@ -77,10 +80,10 @@ src/
 out/                      generated sets + keys (gitignored)
 ```
 
-Two files are not in spec.md's tree. `registry.ts` holds the standard-to-generator
-map that `assemble.ts`, `cli.ts` and the tests all need. `linear.ts` is the shared
-expression reader four standards use to evaluate printed text back into numbers —
-one reader beats four copies.
+Two files were not in the original file plan. `registry.ts` holds the
+standard-to-generator map that `assemble.ts`, `cli.ts` and the tests all need.
+`linear.ts` is the shared expression reader four standards use to evaluate
+printed text back into numbers — one reader beats four copies.
 
 ## Two design decisions worth keeping
 
@@ -104,9 +107,9 @@ Each item draws its own seed from the run RNG, so `Item.seed` reproduces a
 single item in isolation, and an item rejected by the verifier consumes one draw
 rather than desynchronising the stream.
 
-## Two places this build departs from spec.md, deliberately
+## Two places this build departs from the original spec, deliberately
 
-**The 8.EE.A.2 verifier does more than the spec asks.** spec.md gives it as
+**The 8.EE.A.2 verifier does more than the spec asked.** The retired spec gave it as
 `coeff² × radicand === original`. That check passes for `2 sqrt(18)` against
 `sqrt(72)` — 4 × 18 = 72 — which is exactly the misconception the standard
 exists to catch. The verifier therefore also asserts the radicand is squarefree,

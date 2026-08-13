@@ -1,7 +1,7 @@
 // A small evaluator for the linear expressions the tier 3 and 4 standards
 // print, plus the matching renderer.
 //
-// Not in spec.md's file tree. Four standards need to read an expression back
+// Not in the original file plan. Four standards need to read an expression back
 // out of printed text -- 7.EE.A.1 evaluates original against simplified,
 // 7.EE.B.4 tests points against a boundary, 8.EE.C.7b substitutes into both
 // sides, 8.EE.C.8b substitutes into both equations -- and one shared reader

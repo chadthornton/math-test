@@ -319,7 +319,7 @@ function generate(rng: RNG): Item {
 
 // ---------------------------------------------------------------------------
 // verification -- re-derive functionhood, domain and range from the printed
-// relation, per spec.md: "assert generated relation's actual functionhood
+// relation: "assert generated relation's actual functionhood
 // matches the stated label"
 // ---------------------------------------------------------------------------
 

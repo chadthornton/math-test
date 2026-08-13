@@ -127,7 +127,7 @@ function generate(rng: RNG): Item {
 }
 
 // ---------------------------------------------------------------------------
-// verification -- substitute (x, y) into BOTH original equations, per spec.md
+// verification -- substitute (x, y) into BOTH original equations
 // ---------------------------------------------------------------------------
 
 const SOLVED_FORM = /^([xy]) = [^=]+$/;
@@ -145,7 +145,7 @@ function verify(item: Item): boolean {
   if (!claimed) return false;
   const point = { x: Number(claimed[1]), y: Number(claimed[2]) };
 
-  // spec.md: the pair must satisfy BOTH equations.
+  // The pair must satisfy BOTH equations.
   for (const equation of equations) {
     if (!sidesAgree(equation, point)) return false;
   }

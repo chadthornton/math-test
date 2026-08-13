@@ -111,7 +111,7 @@ function generate(rng: RNG): Item {
 
 // ---------------------------------------------------------------------------
 // verification -- boundary satisfies equality, then one point inside and one
-// outside the solution set, per spec.md
+// outside the solution set
 // ---------------------------------------------------------------------------
 
 const QUESTION_RE = /^(-?\d*)x\s*([+-])\s*(\d+)\s*(<=|>=|<|>)\s*(-?\d+)$/;
