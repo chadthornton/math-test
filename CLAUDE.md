@@ -45,7 +45,7 @@ appear, check whether its verifier is rejecting it — that has happened twice
 
 ```bash
 bun install
-bun test                                          # 201 tests
+bun test                                          # 214 tests
 bunx tsc --noEmit
 
 bun run session --tier 1,2 --count 12 --seed 7    # interleaved, assembly rules

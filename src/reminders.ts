@@ -45,7 +45,7 @@ export const REMINDERS: Partial<Record<Standard, Reminder>> = {
     rule: [
       "Adding a negative moves LEFT. Subtracting a negative moves RIGHT.",
       "Two signs in a row cancel:  a - (-b)  is  a + b.",
-      "Same signs: add the magnitudes, keep the sign. Different signs: subtract the smaller magnitude from the larger and keep the sign of the larger.",
+      "Same signs: add the magnitudes, keep the sign. Different signs: subtract the smaller magnitude from the larger and keep the sign of the one with the larger magnitude.",
     ],
     sequence: [
       "Rewrite every  + (-n)  as  - n,  and every  - (-n)  as  + n.",
@@ -189,7 +189,7 @@ export const REMINDERS: Partial<Record<Standard, Reminder>> = {
       "Find the equation that is already solved for a variable.",
       "Substitute it into the OTHER equation, in parentheses.",
       "Distribute, combine, and solve for the one remaining variable.",
-      "Put that value back into equation 1 to get the other variable.",
+      "Put that value back into the already-solved equation to get the other variable.",
       "Check the pair in BOTH original equations.",
     ],
     traps: [
