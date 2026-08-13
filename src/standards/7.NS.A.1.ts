@@ -88,7 +88,12 @@ function build(form: Form, rng: RNG): Built {
         return {
           head,
           tail,
-          work: [rewrite, `${head} - ${m2}  =  ${sum}`],
+          work: [
+            `A plus and a minus sitting next to each other collapse into a`,
+            `single move to the left.`,
+            rewrite,
+            `${head} - ${m2}  =  ${sum}`,
+          ],
           trapValue: m1 + m2,
           trapMeaning:
             "added the magnitudes instead of finding the difference, and kept the first term's sign",
@@ -135,6 +140,8 @@ function build(form: Form, rng: RNG): Built {
         head,
         tail,
         work: [
+          `Two minus signs in a row cancel each other. Taking away a negative`,
+          `leaves you better off, so this move goes RIGHT, not left.`,
           `Subtracting a negative is adding:  ${head} - (${-m2})  =  ${head} + ${m2}`,
           `${head} + ${m2}  =  ${sum}`,
         ],
@@ -178,6 +185,8 @@ function build(form: Form, rng: RNG): Built {
           head,
           tail,
           work: [
+            `The double negative comes first. Two minus signs cancel, so that`,
+            `middle term gets ADDED before I touch the last one.`,
             `Subtracting a negative is adding:  ${head} - (${-m2})  =  ${head} + ${m2}  =  ${first}`,
             `${first} - ${m3}  =  ${sum}`,
           ],
@@ -190,6 +199,7 @@ function build(form: Form, rng: RNG): Built {
         head,
         tail,
         work: [
+          `Three terms, so I work strictly left to right and never regroup.`,
           `Work left to right:  ${head} - ${m2}  =  ${first}`,
           `${first} - ${m3}  =  ${sum}`,
         ],

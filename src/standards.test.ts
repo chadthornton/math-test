@@ -44,6 +44,18 @@ describe.each(BUILT)("%s", (name) => {
     }
   });
 
+  test("the key explains, it does not only compute (brief §6)", () => {
+    // "The answer key is no longer a grading aid. It is the instruction."
+    // With no tutor, a key that is only a chain of equations teaches nothing,
+    // so every standard must carry at least one line of actual reasoning.
+    for (const item of sample(gen, 60, 8)) {
+      const prose = item.work.filter(
+        (w) => !w.includes("=") && w.trim().split(/\s+/).length >= 6,
+      );
+      expect(prose.length).toBeGreaterThan(0);
+    }
+  });
+
   test("a corrupted solution is rejected", () => {
     let caught = 0;
     for (const item of sample(gen, 40, 12)) {

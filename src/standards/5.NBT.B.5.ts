@@ -129,6 +129,8 @@ function generate(rng: RNG): Item {
     const ones = whole % 10;
     const width = String(tens * single).length;
     work = [
+      `${whole} x ${single} is too big to recall, so I split ${whole} by place`,
+      `value and multiply each part separately.`,
       `Break ${whole} into ${tens} + ${ones}:`,
       `  ${tens} x ${single}  =  ${pad(tens * single, width)}`,
       `  ${pad(ones, String(tens).length)} x ${single}  =  ${pad(ones * single, width)}`,
@@ -149,6 +151,9 @@ function generate(rng: RNG): Item {
     const ones = right % 10;
     const width = String(left * tens).length;
     work = [
+      `Both factors have two digits, so I split the second one by place value.`,
+      `The ${tens} row is the one that gets shifted -- that is where the place`,
+      `value is usually lost.`,
       `Break ${right} into ${tens} + ${ones}:`,
       `  ${left} x ${pad(tens, 2)}  =  ${pad(left * tens, width)}`,
       `  ${left} x ${pad(ones, 2)}  =  ${pad(left * ones, width)}`,
@@ -175,6 +180,8 @@ function generate(rng: RNG): Item {
     const product = multiply(a, b);
 
     work = [
+      `A decimal point never changes the digits, only where the point lands.`,
+      `So I multiply as whole numbers first and place the point at the end.`,
       `Ignore the points and multiply the digits:  ${a.digits} x ${b.digits}  =  ${product.digits}`,
       `Count decimal places:  ${show(a)} has ${a.places}, ${show(b)} has ${b.places}  ->  ${product.places}`,
       `Put ${places(product.places)} back into ${product.digits}:  ${show(product)}` +

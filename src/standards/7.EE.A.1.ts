@@ -54,6 +54,10 @@ function generate(rng: RNG): Item {
   const answer = renderLinear(coefficient, constant);
 
   const work = [
+    b < 0
+      ? `I see a NEGATIVE outside the parentheses, so I am watching both terms --`
+      : `There is a multiplier outside the parentheses, so it reaches both terms --`,
+    `the sign is the thing that gets dropped here.`,
     `Distribute ${b} across BOTH terms in the parentheses:`,
     `  ${b} x ${renderTerm(c, "x")} = ${renderTerm(b * c, "x")}`,
     `  ${b} x ${d} = ${b * d}`,

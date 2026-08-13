@@ -52,11 +52,15 @@ function generate(rng: RNG): Item {
   const right = renderTerm(c, "x") + renderConstant(d);
 
   const work = [
-    `Get the x terms on one side. Subtract ${renderTerm(c, "x")} from both sides:`,
+    `x is on BOTH sides, so before anything else I have to get the x terms`,
+    `together. I move ${renderTerm(c, "x")} across, which leaves ${renderTerm(gap, "x")} on the left.`,
+    `Subtract ${renderTerm(c, "x")} from both sides:`,
     `  ${renderTerm(gap, "x")}${renderConstant(b)} = ${d}`,
-    `Now move the constant. Subtract ${b} from both sides:`,
+    `Now the constant. ${b} is on the same side as the x, so it has to go:`,
     `  ${renderTerm(gap, "x")} = ${d - b}`,
-    `Divide both sides by ${gap}:`,
+    ...(Math.abs(gap) === 1
+      ? [`The coefficient is already ${gap}, so x is isolated:`]
+      : [`Divide both sides by ${gap}:`]),
     `  x = ${solution}`,
     `Check both sides with x = ${solution}:`,
     `  ${a}(${solution})${renderConstant(b)} = ${a * solution + b}`,

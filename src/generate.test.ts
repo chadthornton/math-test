@@ -75,7 +75,8 @@ describe("7.NS.A.1", () => {
     const doubles = sample(300, 21).filter((i) => i.prompt.includes("- (-"));
     expect(doubles.length).toBeGreaterThan(30);
     for (const item of doubles) {
-      expect(item.work[0]).toContain("Subtracting a negative is adding");
+      // Not work[0] -- brief §6 puts the reasoning first, the rule after.
+      expect(item.work.join("\n")).toContain("Subtracting a negative is adding");
     }
   });
 
