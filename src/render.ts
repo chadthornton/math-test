@@ -63,6 +63,12 @@ export function renderSet(session: Session): string {
 export interface KeyOptions {
   /** Seeds of items rebuilt from the log, so the key can mark them. */
   recall?: ReadonlySet<number>;
+  /**
+   * The command that reproduces this exact set. A seed alone does not --
+   * `--count` and `--tier` change the items too. `grade` reads sessions.md;
+   * this is the human-readable fallback for when the paper outlives the file.
+   */
+  invocation?: string;
 }
 
 /**
@@ -94,14 +100,17 @@ export function renderKey(session: Session, opts: KeyOptions = {}): string {
     "",
     meta(session),
     "",
+    ...(opts.invocation
+      ? ["Regenerate this exact set:", "", fence(opts.invocation), ""]
+      : []),
     "Every solution below was computed by the generator and re-verified against",
     "the printed problem, not written out by hand.",
     "",
     "Each entry ends with the likely wrong answer and what it means. If she",
     "produces that answer, copy the `log:` line into log.md and fill in the two",
-    "blank fields -- what she wrote, and wrong / stuck / slow. The seed is",
-    "already there, and it is what lets a later session re-drill this exact",
-    "problem rather than another one like it.",
+    "blank fields -- what she wrote verbatim, then an error signature from the",
+    "taxonomy in brief.md. The seed is already there, and it is what lets a",
+    "later session re-drill this exact problem rather than another one like it.",
     "",
     RULE,
     "",

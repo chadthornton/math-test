@@ -10,7 +10,13 @@
 //
 // All commands emit two files to out/: the set and the key.
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 
 import {
@@ -32,6 +38,14 @@ import {
   renderSweepKey,
 } from "./exercises.ts";
 import { renderKey, renderSet } from "./render.ts";
+import {
+  SESSIONS_HEADER,
+  SESSIONS_PATH,
+  fingerprint,
+  formatRecord,
+  invocationOf,
+  type SessionRecord,
+} from "./sessions.ts";
 import { BUILT, generatorFor } from "./registry.ts";
 import { isKnown, tokensIn } from "./signatures.ts";
 
@@ -89,14 +103,35 @@ function writeOut(args: Args, stem: string, set: string, key?: string): void {
   }
 }
 
+/**
+ * Append one line to sessions.md. This is what makes a printed set findable
+ * again -- a seed alone does not identify it, since --count and --tier change
+ * the items too.
+ */
+function recordSession(record: SessionRecord): void {
+  if (!existsSync(SESSIONS_PATH)) writeFileSync(SESSIONS_PATH, SESSIONS_HEADER);
+  appendFileSync(SESSIONS_PATH, `${formatRecord(record)}\n`);
+  process.stderr.write(`indexed in ${SESSIONS_PATH}\n`);
+}
+
 function emit(
   session: Session,
   slug: string,
   args: Args,
+  scope: string,
+  command: string,
   recall?: ReadonlySet<number>,
 ): void {
+  const record: SessionRecord = {
+    date: session.date,
+    command,
+    seed: session.seed,
+    count: session.items.length,
+    scope,
+    fingerprint: fingerprint(session.items),
+  };
   const set = renderSet(session);
-  const key = renderKey(session, { recall });
+  const key = renderKey(session, { recall, invocation: invocationOf(record) });
   process.stdout.write(set + "\n" + key);
 
   if (args.bare.has("no-write")) return;
@@ -108,6 +143,7 @@ function emit(
   process.stderr.write(
     `\nwrote ${join(outDir, `${stem}.md`)}\nwrote ${join(outDir, `${stem}-key.md`)}\n`,
   );
+  recordSession(record);
 }
 
 function loadMisses() {
@@ -156,7 +192,13 @@ function main(): void {
         }
       }
 
-      emit({ seed, date, items }, standards.join("+"), args);
+      emit(
+        { seed, date, items },
+        standards.join("+"),
+        args,
+        `standards ${standards.join(",")}`,
+        "gen",
+      );
       process.stderr.write(`${items.length} items verified, ${rejected} rejected\n`);
       return;
     }
@@ -176,7 +218,8 @@ function main(): void {
         missed: fromLog ? loadMisses() : undefined,
       });
 
-      emit(result.session, "session", args, result.recalled);
+      const scope = tiers.length > 0 ? `tier ${tiers.join(",")}` : "-";
+      emit(result.session, "session", args, scope, "session", result.recalled);
       const used = [...new Set(result.session.items.map((i) => i.standard))];
       process.stderr.write(
         `${result.session.items.length} items verified, ${result.rejected} rejected\n` +
@@ -195,7 +238,7 @@ function main(): void {
       const items = generateItems(generatorFor(name), new RNG(seed), count, {
         onReject: () => rejected++,
       });
-      emit({ seed, date, items }, `drill-${name}`, args);
+      emit({ seed, date, items }, `drill-${name}`, args, `standard ${name}`, "drill");
       process.stderr.write(`${items.length} items verified, ${rejected} rejected\n`);
       return;
     }
