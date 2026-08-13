@@ -118,6 +118,8 @@ function generate(rng: RNG): Item {
   return {
     standard: STANDARD,
     prompt: `${QUESTION}\n\n  ${eq1}\n  ${eq2}`,
+    // Both equations. Logging only the second loses the system.
+    logLabel: `${eq1} ; ${eq2}`,
     solution: `x = ${x}, y = ${y}`,
     work,
     trap: distractor,

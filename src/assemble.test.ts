@@ -340,6 +340,33 @@ describe("recall by seed", () => {
     expect((key.match(/^log: /gm) ?? []).length).toBe(session.items.length);
   });
 
+  test("the log line names the problem, not the instruction", () => {
+    const { session } = build({ seed: 5, count: 13 });
+    const key = renderKey(session);
+    const problems = (key.match(/^log: .+$/gm) ?? []).map(
+      (l) => l.split("|")[2]!.trim(),
+    );
+    expect(problems).toHaveLength(session.items.length);
+    for (const p of problems) {
+      expect(p.length).toBeGreaterThan(0);
+      // These are instruction fragments that used to land here because the
+      // helper took the prompt's last line.
+      expect(p).not.toMatch(/sentence with units|Define your variable/);
+      // And a multi-word directive used to survive the strip.
+      expect(p).not.toMatch(/^(Evaluate|Simplify|Solve|Multiply)\b.*:/);
+    }
+  });
+
+  test("a system logs both equations, not just the second", () => {
+    const { session } = build({ seed: 5, count: 13 });
+    const key = renderKey(session);
+    const line = (key.match(/^log: .+8\.EE\.C\.8b.+$/gm) ?? [])[0];
+    expect(line).toBeDefined();
+    const problem = line!.split("|")[2]!;
+    expect(problem).toContain(";");
+    expect((problem.match(/=/g) ?? []).length).toBe(2);
+  });
+
   test("a printed log line round-trips back through the parser", () => {
     const { session } = build({ seed: 11, count: 12 });
     const lines = (renderKey(session).match(/^log: .+$/gm) ?? []).map((l) =>

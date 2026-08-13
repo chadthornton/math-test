@@ -26,6 +26,12 @@ export interface Item {
   trap: string; // likely wrong answer + what it means
   tier: Tier;
   seed: number;
+  /**
+   * One-line rendering of the problem for the answer key's paste-ready
+   * log line. Only needed when the prompt spans lines or carries an
+   * instruction the log should not repeat -- otherwise render.ts derives it.
+   */
+  logLabel?: string;
 }
 
 export interface Session {
@@ -140,7 +146,13 @@ export function trapAnswer(text: string): string | null {
 export function checkCommon(item: Item, standard: Standard, tier: Tier): boolean {
   if (item.standard !== standard || item.tier !== tier) return false;
   if (item.work.length === 0) return false;
-  for (const text of [item.prompt, item.solution, item.trap, ...item.work]) {
+  for (const text of [
+    item.prompt,
+    item.solution,
+    item.trap,
+    item.logLabel ?? "",
+    ...item.work,
+  ]) {
     if (!isAscii(text)) return false; // monospace-safe
   }
   const wrong = trapAnswer(item.trap);

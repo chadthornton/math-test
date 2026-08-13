@@ -309,6 +309,8 @@ function generate(rng: RNG): Item {
   return {
     standard: STANDARD,
     prompt: `${QUESTION}\n\n${body}`,
+    // The relation, not the question stem, and not just the last row of a table.
+    logLabel: pairs.map(([x, y]) => `(${x}, ${y})`).join(" "),
     solution: answerLine(pairs),
     work: steps,
     trap: distractor(pairs),

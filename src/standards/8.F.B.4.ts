@@ -132,6 +132,9 @@ function generate(rng: RNG): Item {
   return {
     standard: STANDARD,
     prompt: `${story.text(Math.abs(rate), start, target)}\n\nDefine your variable, write an equation, solve it, and answer in a\nsentence with units.`,
+    // The story. The instruction is the same on every item and says nothing
+    // about which problem this was.
+    logLabel: story.text(Math.abs(rate), start, target).replace(/\n/g, " "),
     solution: `Equation: ${equation}\n${v} = ${answer}\nSentence: ${story.sentence(answer)}`,
     work,
     trap: distractor,

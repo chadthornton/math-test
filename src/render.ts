@@ -70,10 +70,18 @@ export interface KeyOptions {
  * makes a missed problem reconstructible later -- see log.md. Everything is
  * pre-filled except what she wrote and how it went.
  */
-function logLine(item: { standard: string; prompt: string; seed: number }, date: string): string {
-  const lines = item.prompt.split("\n").filter((l) => l.trim().length > 0);
-  const problem = (lines[lines.length - 1] ?? "")
-    .replace(/^\s*\w+:\s*/, "") // drop the directive
+function logLine(
+  item: { standard: string; prompt: string; seed: number; logLabel?: string },
+  date: string,
+): string {
+  // A module sets logLabel when its prompt spans lines, because only the
+  // module knows which part is the problem. Otherwise: single line, strip
+  // the directive. Directives can be several words ("Solve, then describe
+  // the graph:"), so match up to the colon rather than one word.
+  const raw =
+    item.logLabel ?? item.prompt.replace(/^[^:\n]*:\s*/, "");
+  const problem = raw
+    .replace(/\s+/g, " ") // collapse any wrapping
     .replace(/\|/g, "/") // a pipe would break the field split
     .trim();
   const short = problem.length > 44 ? `${problem.slice(0, 41)}...` : problem;
