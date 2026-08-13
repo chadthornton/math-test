@@ -13,23 +13,29 @@ Solutions are **computed and re-verified, never authored**.
 
 ## Status
 
-**All six build-order steps are done. All ten standards are built.**
+**Nine standards built and verified.** Multiplication (`5.NBT.B.5`) is
+deliberately absent — brief.md §3 says it is drilled by a separate tool and
+must not be duplicated here.
 
-| Step | | State |
+| Tier | Standards | Role |
 |---|---|---|
-| 1 | RNG + `Item` type + 7.NS.A.1 generator + verifier | done |
-| 2 | `render.ts`, printable output | done |
-| 3 | Remaining tier 1 + tier 2 generators | done |
-| 4 | `assemble.ts` + the three assembler tests | done |
-| 5 | Tier 3 + 4 generators | done |
-| 6 | `--from-log` | done |
+| 1 | `7.NS.A.1` | Gate 0. brief.md §9 runs it daily throughout. |
+| 2 | `8.EE.A.1` `8.EE.A.2` `8.F.A.1` | near-independent of Gate 0, can run early |
+| 3 | `7.EE.A.1` `7.EE.B.4` `8.EE.C.7b` | the dependent chain |
+| 4 | `8.EE.C.8b` `8.F.B.4` | compound; require everything above |
 
-| Tier | Standards |
-|---|---|
-| 1 — root cause, daily | `7.NS.A.1` |
-| 2 — cheap, travel week | `8.EE.A.1` `8.EE.A.2` `8.F.A.1` |
-| 3 — procedural | `7.EE.A.1` `7.EE.B.4` `8.EE.C.7b` |
-| 4 — compound | `8.EE.C.8b` `8.F.B.4` |
+Tiers are a code-level grouping. brief.md §3 now expresses the same structure
+as a dependency graph, and brief.md §9 sequences the work by date; neither is
+modelled here.
+
+Built: item generation with per-standard verifiers, session assembly with
+interleaving and spaced recall, printable markdown, and log intake.
+Not built: progress state derived from the log (DERIVE), and what-to-work-on-next
+(ADVISE). See the operations map in `CLAUDE.md` — and the unresolved question
+recorded there before building either.
+
+Three of brief.md §4's six exercise types have no render mode yet: the faded
+example, the reminder sheet, and the diagnostic sweep.
 
 Nothing from the non-goals list is present: no UI, no auth, no database, no
 adaptive difficulty, no spaced-repetition engine, no LaTeX. Output is
@@ -39,7 +45,7 @@ monospace ASCII in fenced blocks.
 
 ```bash
 bun install
-bun test
+bun test             # 140 passing
 
 bun run session --tier 1,2 --count 12 --seed 7   # interleaved mixed set
 bun run session --from-log --count 12            # guarantees logged misses

@@ -64,12 +64,13 @@ is optional and entries without it still work.
 - Only lines whose **second** field is a real standard code are parsed, and only
   below the marker at the bottom. Headings, prose and the examples above cost
   nothing.
-- **Known gap:** `session --from-log` still classifies a miss by looking for the
-  words *wrong* or *stuck* in field 5, which was the old free-text format. A log
-  written with signatures classifies as zero misses, and `--from-log` quietly
-  falls back to an ordinary session. Until that is fixed, either expect the
-  fallback or append an outcome word after the signature
-  (`NO_FLIP, wrong`) — the parser keeps the whole field.
+- An entry counts as a **miss** to re-drill when field 5 carries a signature
+  from the taxonomy — except `SLOW`, which records a correct-but-slow answer
+  rather than a gap.
+- A signature that is not in brief.md §5's taxonomy is almost always a typo, and
+  a typo would otherwise silently mean "not a miss". `--from-log` prints a
+  warning listing any it does not recognise.
+- Free-text outcomes from the older format (`wrong, no flip`) still classify.
 
 ---
 
