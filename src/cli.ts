@@ -17,7 +17,7 @@ import {
   type Standard,
   type Tier,
 } from "./generate.ts";
-import { assemble, misses, parseLog } from "./assemble.ts";
+import { assemble, misses, parseLog, unknownSignatures } from "./assemble.ts";
 import { renderKey, renderSet } from "./render.ts";
 import { BUILT, generatorFor } from "./registry.ts";
 
@@ -88,8 +88,18 @@ function loadMisses() {
     process.stderr.write(`no ${LOG_PATH} found; continuing without spaced recall\n`);
     return [];
   }
-  const found = misses(parseLog(readFileSync(LOG_PATH, "utf8")));
-  process.stderr.write(`${LOG_PATH}: ${found.length} logged miss(es)\n`);
+  const entries = parseLog(readFileSync(LOG_PATH, "utf8"));
+  const found = misses(entries);
+  process.stderr.write(
+    `${LOG_PATH}: ${entries.length} entr(ies), ${found.length} miss(es)\n`,
+  );
+  // A typo'd signature is not a miss, and would otherwise vanish silently.
+  const unknown = unknownSignatures(entries);
+  if (unknown.length > 0) {
+    process.stderr.write(
+      `warning: not in brief.md §5's taxonomy: ${unknown.join(", ")}\n`,
+    );
+  }
   return found;
 }
 

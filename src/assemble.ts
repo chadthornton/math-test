@@ -23,6 +23,7 @@
 import type { Generator, Item, Session, Standard, Tier } from "./generate.ts";
 import { RNG, generateItems, shuffle } from "./generate.ts";
 import { BUILT, REGISTRY } from "./registry.ts";
+import { NOT_A_MISS, isKnown, tokensIn, unrecognized } from "./signatures.ts";
 
 export const SESSION_MIN = 12;
 export const SESSION_MAX = 14;
@@ -31,11 +32,9 @@ export const SESSION_MAX = 14;
 // log.md -- brief.md §8 format:
 //   DATE | STANDARD | PROBLEM AS GIVEN | WHAT SHE WROTE | SIGNATURE
 //
-// Field 5 changed meaning. It used to be a free-text outcome ("wrong, no
-// flip"); brief.md §8 now writes it as an error signature drawn from §5's
-// taxonomy (NO_FLIP, PARTIAL_DISTRIBUTE, SLOW, ...). The parser below reads
-// all five fields either way, but misses() still classifies on the old free
-// text -- see the note there.
+// Field 5 is an error signature drawn from §5's taxonomy (NO_FLIP,
+// PARTIAL_DISTRIBUTE, SLOW, ...). It used to be a free-text outcome ("wrong,
+// no flip"); misses() below understands both.
 // ---------------------------------------------------------------------------
 
 export interface LogEntry {
@@ -96,25 +95,36 @@ export function parseLog(text: string): LogEntry[] {
 }
 
 /**
- * A miss is wrong or stuck.
+ * Which logged entries are worth re-drilling.
  *
- * KNOWN GAP, not fixed here: brief.md §8 now writes field 5 as an error
- * SIGNATURE from §5's taxonomy (NO_FLIP, PARTIAL_DISTRIBUTE, SLOW, ...)
- * rather than as free text. This matcher still looks for the words "wrong" or
- * "stuck", so a log written in the current format classifies as ZERO misses
- * and `--from-log` silently degrades to an ordinary session. Fixing it means
- * matching against the taxonomy and treating SLOW as not-a-miss, which is a
- * behaviour change rather than a documentation one.
+ * brief.md §8 writes field 5 as an error signature from §5's taxonomy. An
+ * entry carrying any recognised signature is a miss, EXCEPT when every
+ * signature on it is one that records something other than a wrong answer --
+ * `SLOW` being the brief's own example ("376, ~50s | SLOW": right, just slow).
  *
- * The negation strip below is for the older free-text format: "slow, not
- * wrong" was the brief's own example, and a bare search for "wrong" counts it
- * as a miss.
+ * Free text still works. Entries written the older way ("wrong, no flip")
+ * fall through to a word match, with negations stripped first, because "slow,
+ * not wrong" was the previous format's own example and a bare search for
+ * "wrong" would count it.
  */
 export function misses(entries: readonly LogEntry[]): LogEntry[] {
   return entries.filter((e) => {
+    const known = tokensIn(e.outcome).filter(isKnown);
+    if (known.length > 0) return known.some((s) => !NOT_A_MISS.has(s));
     const outcome = e.outcome.replace(/\bnot\s+(wrong|stuck)\b/gi, "");
     return /\b(wrong|stuck)\b/i.test(outcome);
   });
+}
+
+/**
+ * Signature-shaped tokens in the log that are not in brief.md §5's taxonomy.
+ * Almost always a typo, and a typo would otherwise silently drop a miss, so
+ * the CLI reports these rather than letting them pass.
+ */
+export function unknownSignatures(entries: readonly LogEntry[]): string[] {
+  const found = new Set<string>();
+  for (const e of entries) for (const t of unrecognized(e.outcome)) found.add(t);
+  return [...found].sort();
 }
 
 // ---------------------------------------------------------------------------

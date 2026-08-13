@@ -7,8 +7,10 @@ import {
   assemble,
   misses,
   parseLog,
+  unknownSignatures,
   type LogEntry,
 } from "./assemble.ts";
+import { SIGNATURES, isKnown } from "./signatures.ts";
 import { REGISTRY } from "./registry.ts";
 import { renderKey, renderSet } from "./render.ts";
 
@@ -183,6 +185,63 @@ describe("parseLog", () => {
   test("an empty log parses to nothing rather than throwing", () => {
     expect(parseLog("")).toEqual([]);
     expect(parseLog("# just a heading\n")).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// error signatures -- brief.md §5 taxonomy, §8 field 5
+// ---------------------------------------------------------------------------
+
+describe("signature classification", () => {
+  const log = [
+    LOG_MARKER,
+    "Aug 15 | 7.EE.B.4 | -3x + 2 > 11 | x > -3 | NO_FLIP | 2581720956",
+    "Aug 15 | 7.EE.A.1 | 7x - 2(3x - 5) + 4 | x - 6 | PARTIAL_DISTRIBUTE",
+    "Aug 15 | 5.NBT.B.5 | 47 x 8 | 376, ~50s | SLOW",
+  ].join("\n");
+
+  test("a signature-format log classifies misses", () => {
+    // This is the whole point: before signatures were understood, every one of
+    // these read as zero misses and --from-log degraded to a normal session.
+    const found = misses(parseLog(log));
+    expect(found.map((e) => e.standard)).toEqual(["7.EE.B.4", "7.EE.A.1"]);
+  });
+
+  test("SLOW is not a miss -- the answer was right", () => {
+    expect(misses(parseLog(log)).some((e) => e.outcome.includes("SLOW"))).toBe(false);
+  });
+
+  test("a signature alongside SLOW still counts", () => {
+    const both = `${LOG_MARKER}\nAug 15 | 7.NS.A.1 | -4 + 11 | 7 | SIGN_RULE, SLOW`;
+    expect(misses(parseLog(both))).toHaveLength(1);
+  });
+
+  test("the older free-text format still works", () => {
+    const legacy = [
+      LOG_MARKER,
+      "Aug 6 | 7.EE.B.4 | -3x + 2 > 11 | x > -3 | wrong, no flip",
+      "Aug 6 | 5.NBT.B.5 | 47 x 8 | 376 | slow, not wrong",
+    ].join("\n");
+    expect(misses(parseLog(legacy)).map((e) => e.standard)).toEqual(["7.EE.B.4"]);
+  });
+
+  test("every signature in the taxonomy is recognised", () => {
+    for (const list of Object.values(SIGNATURES)) {
+      for (const sig of list) expect(isKnown(sig)).toBe(true);
+    }
+  });
+
+  test("a typo'd signature is surfaced, not silently dropped", () => {
+    // NO_FILP would otherwise classify as "no signature, no wrong/stuck" and
+    // vanish -- the exact silent failure this replaced.
+    const typo = `${LOG_MARKER}\nAug 15 | 7.EE.B.4 | -3x + 2 > 11 | x > -3 | NO_FILP`;
+    expect(unknownSignatures(parseLog(typo))).toEqual(["NO_FILP"]);
+    expect(unknownSignatures(parseLog(log))).toEqual([]);
+  });
+
+  test("5.NBT.B.5 signatures still parse though it has no generator", () => {
+    expect(isKnown("PLACE_VALUE")).toBe(true);
+    expect(parseLog(log).some((e) => e.standard === "5.NBT.B.5")).toBe(true);
   });
 });
 
