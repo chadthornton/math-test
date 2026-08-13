@@ -55,6 +55,7 @@ bun run drill --standard 7.NS.A.1 --count 20      # one standard
 bun run faded --standard 7.EE.B.4 --seed 3        # brief.md §6 ladder
 bun run reminder --standard 7.EE.B.4 --from-log   # brief.md §5 rule sheet
 bun run sweep --count 10 --seed 4                 # brief.md §4 MC triage
+bun run grade --date 2026-08-13                   # log a graded set (see NEXT.md 1)
 ```
 
 Same `--seed` and `--date` produce byte-identical output. That is why `out/` is
@@ -182,7 +183,7 @@ Seven concerns. Four are built; three are not.
 | GENERATE — parameterized items + verifiers | built |
 | ASSEMBLE — interleaving, spaced recall | built |
 | RENDER — printable output | built |
-| CAPTURE — log intake | **manual paste only** |
+| CAPTURE — log intake | built (`grade`; paste-ready `log:` lines remain the manual fallback) |
 | DERIVE — progress state from log | **not built** |
 | ADVISE — what to work on next | **not built** |
 
@@ -236,11 +237,12 @@ Never put free text where a signature belongs.
 **Also log correct answers on previously-missed types.** That is the only signal
 that a gate is closing.
 
-**Known gap:** `misses()` in `src/assemble.ts` still classifies field 5 by
-searching for the words *wrong* or *stuck*, which was the previous free-text
-format. A log written with signatures reads as zero misses and `--from-log`
-degrades silently to an ordinary session. Fixing it is a behaviour change, not a
-documentation one, and has not been done.
+**Closed gap (kept for history):** `misses()` in `src/assemble.ts` once
+classified field 5 by searching for the words *wrong* or *stuck*. It now reads
+signatures through `src/signatures.ts` and falls back to the word match only
+for old-format free-text entries; `grade` writes `ok` in field 5 for
+inferred-correct entries precisely because `ok` is not signature-shaped and can
+never read as a miss.
 
 ### Predicted errors
 

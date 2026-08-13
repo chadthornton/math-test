@@ -10,7 +10,24 @@ they all evaluate identically — a state that stops existing after day one.
 
 ---
 
-## 1 · `grade` — NEXT UP
+## 1 · `grade` — DONE (Aug 13)
+
+Built to the requirements below; logic in `src/grade.ts` (tested in
+`src/grade.test.ts`), prompt loop in `cli.ts`. Notes from the build:
+
+- Byte-identical duplicate lines in `sessions.md` collapse to one candidate;
+  only genuinely different invocations on a date are ambiguous (`--seed`
+  narrows).
+- Inferred-correct entries are written as `ok` in field 5 — not
+  signature-shaped, so they can never read as a miss — and only for standards
+  with a genuine prior miss, so twelve `ok` lines a day don't bury the gate
+  signal.
+- A `session --from-log` sheet whose log has changed since printing, or a
+  session scoped by `--standards` (the scope field doesn't record those),
+  regenerates differently and is refused via the fingerprint check — refusal,
+  never a silent wrong set.
+
+### Original spec (kept)
 
 **Spec:** `functional-overview.md` §4 for the shape and the worked example;
 `workflow-spec.md` §Build order for the constraints.
@@ -49,7 +66,7 @@ $ bun run grade --date 2026-08-13
 
 ---
 
-## 2 · `progress`
+## 2 · `progress` — NEXT UP
 
 **Spec:** `brief.md` §7, `functional-overview.md` §5.
 

@@ -28,7 +28,16 @@ import {
   type Standard,
   type Tier,
 } from "./generate.ts";
-import { assemble, misses, parseLog, unknownSignatures } from "./assemble.ts";
+import { assemble, misses, parseLog, unknownSignatures, LOG_MARKER } from "./assemble.ts";
+import {
+  classify,
+  genItems,
+  inferredCorrect,
+  missEntry,
+  okEntry,
+  resolveTarget,
+  verifyRecord,
+} from "./grade.ts";
 import {
   buildSweep,
   renderFaded,
@@ -44,10 +53,12 @@ import {
   fingerprint,
   formatRecord,
   invocationOf,
+  parseSessions,
   type SessionRecord,
 } from "./sessions.ts";
 import { BUILT, generatorFor } from "./registry.ts";
-import { isKnown, tokensIn } from "./signatures.ts";
+import { SIGNATURES, isKnown, tokensIn } from "./signatures.ts";
+import { logProblem } from "./render.ts";
 
 const LOG_PATH = "log.md";
 
@@ -166,7 +177,7 @@ function loadMisses() {
   return found;
 }
 
-function main(): void {
+async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   const seed = integer(args.flags.get("seed"), 42, "seed");
   const date = args.flags.get("date") ?? new Date().toISOString().slice(0, 10);
@@ -177,20 +188,12 @@ function main(): void {
       const count = integer(args.flags.get("count"), 10, "count");
       const names = list(args.flags.get("standards"));
       const standards = (names.length > 0 ? names : ["7.NS.A.1"]) as Standard[];
-      const rng = new RNG(seed);
       let rejected = 0;
-
-      const batches = standards.map((s) =>
-        generateItems(generatorFor(s), rng, Math.ceil(count / standards.length), {
-          onReject: () => rejected++,
-        }),
-      );
-      const items = [];
-      for (let i = 0; items.length < count; i++) {
-        for (const batch of batches) {
-          if (batch[i] && items.length < count) items.push(batch[i]!);
-        }
-      }
+      // Shared with grade's rebuildSet -- one batching, so a graded gen set
+      // regenerates byte-identically.
+      const items = genItems(standards, count, new RNG(seed), {
+        onReject: () => rejected++,
+      });
 
       emit(
         { seed, date, items },
@@ -307,12 +310,131 @@ function main(): void {
       return;
     }
 
+    case "grade":
+      return grade(args, date);
+
     default:
       throw new Error(
-        `unknown command "${args.command}". Try: gen, session, drill, faded, reminder, sweep. ` +
+        `unknown command "${args.command}". Try: gen, session, drill, faded, reminder, sweep, grade. ` +
           `Standards built so far: ${BUILT.join(", ")}`,
       );
   }
 }
 
-main();
+/**
+ * grade -- NEXT.md item 1. Two inputs: which item numbers were wrong, and
+ * what she wrote. The set is found through sessions.md, regenerated, and
+ * fingerprint-checked; on a mismatch grading is REFUSED rather than logging
+ * her answers against problems she never saw.
+ */
+async function grade(args: Args, date: string): Promise<void> {
+  if (!existsSync(SESSIONS_PATH)) {
+    throw new Error(`no ${SESSIONS_PATH} -- nothing has been indexed yet`);
+  }
+  const records = parseSessions(readFileSync(SESSIONS_PATH, "utf8"));
+  const seed = args.flags.has("seed")
+    ? integer(args.flags.get("seed"), 0, "seed")
+    : undefined;
+
+  const { record, candidates } = resolveTarget(records, date, seed);
+  if (!record) {
+    if (candidates.length === 0) {
+      throw new Error(`no set indexed for ${date} in ${SESSIONS_PATH}`);
+    }
+    process.stderr.write(`More than one set on ${date}:\n`);
+    for (const c of candidates) process.stderr.write(`  ${formatRecord(c)}\n`);
+    throw new Error(`add --seed to say which one`);
+  }
+
+  const check = verifyRecord(record);
+  if (!check.ok) {
+    throw new Error(
+      `REFUSING to grade: regenerating "${invocationOf(record)}" gives fingerprint ` +
+        `${check.fingerprint}, but the sheet was printed from ${record.fingerprint}. ` +
+        `A generator changed since printing; these are no longer the problems she saw.`,
+    );
+  }
+  const items = check.items;
+
+  // Bun's console iterator yields stdin lines and ends cleanly on EOF.
+  // (node:readline's question() resolves instantly-empty on a piped stdin
+  // under Bun, which turned the signature menu into a hot loop.)
+  const stdin = console[Symbol.asyncIterator]();
+  const ask = async (q: string): Promise<string> => {
+    process.stderr.write(q);
+    const { value, done } = await stdin.next();
+    if (done || value === undefined) {
+      throw new Error("input ended before grading finished; nothing was logged");
+    }
+    return value;
+  };
+
+  {
+    const rawWrong =
+      args.flags.get("wrong") ??
+      (await ask(
+        `${items.length} items in this set. Which were wrong? (numbers, blank = none)  `,
+      ));
+    const wrongIndices = new Set<number>();
+    for (const token of rawWrong.split(/[\s,]+/).filter(Boolean)) {
+      if (token.toLowerCase() === "none") continue;
+      const n = Number(token);
+      if (!Number.isInteger(n) || n < 1 || n > items.length) {
+        throw new Error(`"${token}" is not an item number between 1 and ${items.length}`);
+      }
+      wrongIndices.add(n - 1);
+    }
+
+    const lines: string[] = [];
+    for (const index of [...wrongIndices].sort((a, b) => a - b)) {
+      const item = items[index]!;
+      process.stderr.write(
+        `\nItem ${index + 1}   ${logProblem(item)}   (correct: ${item.solution})\n`,
+      );
+      const wrote = await ask("she wrote:  ");
+
+      let signature = classify(item, wrote);
+      if (signature) {
+        process.stderr.write(`-> ${signature}\n`);
+      } else {
+        // The numbered menu is the designed fallback, not a failure --
+        // recognition, not recall. Free text is never accepted here.
+        const options = SIGNATURES[item.standard];
+        process.stderr.write(`\n`);
+        options.forEach((s, i) => process.stderr.write(`  ${i + 1}  ${s}\n`));
+        process.stderr.write(`  0  skip -- log nothing for this item\n`);
+        while (signature === null) {
+          const picked = (await ask("signature?  ")).trim();
+          if (picked === "0") break;
+          const byNumber = options[Number(picked) - 1];
+          if (byNumber) signature = byNumber;
+          else if (options.includes(picked)) signature = picked;
+          else process.stderr.write(`pick 0-${options.length} or a listed signature\n`);
+        }
+        if (signature === null) continue; // skipped
+      }
+      lines.push(missEntry(record.date, item, wrote, signature));
+    }
+
+    const prior = existsSync(LOG_PATH)
+      ? parseLog(readFileSync(LOG_PATH, "utf8"))
+      : [];
+    for (const item of inferredCorrect(items, wrongIndices, prior)) {
+      lines.push(okEntry(record.date, item));
+    }
+
+    if (lines.length === 0) {
+      process.stderr.write(
+        "\nnothing to log: no misses named, and no correct item is on a previously-missed standard\n",
+      );
+      return;
+    }
+
+    if (!existsSync(LOG_PATH)) writeFileSync(LOG_PATH, `${LOG_MARKER}\n`);
+    appendFileSync(LOG_PATH, lines.map((l) => `${l}\n`).join(""));
+    process.stderr.write(`\nappended to ${LOG_PATH}:\n`);
+    for (const line of lines) process.stderr.write(`  ${line}\n`);
+  }
+}
+
+await main();

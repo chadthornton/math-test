@@ -76,22 +76,29 @@ export interface KeyOptions {
  * makes a missed problem reconstructible later -- see log.md. Everything is
  * pre-filled except what she wrote and how it went.
  */
-function logLine(
-  item: { standard: string; prompt: string; seed: number; logLabel?: string },
-  date: string,
-): string {
-  // A module sets logLabel when its prompt spans lines, because only the
-  // module knows which part is the problem. Otherwise: single line, strip
-  // the directive. Directives can be several words ("Solve, then describe
-  // the graph:"), so match up to the colon rather than one word.
-  const raw =
-    item.logLabel ?? item.prompt.replace(/^[^:\n]*:\s*/, "");
+/**
+ * The problem as log.md's third field states it. Shared with `grade`, which
+ * writes the same field -- one derivation, so key and log cannot drift.
+ *
+ * A module sets logLabel when its prompt spans lines, because only the
+ * module knows which part is the problem. Otherwise: single line, strip
+ * the directive. Directives can be several words ("Solve, then describe
+ * the graph:"), so match up to the colon rather than one word.
+ */
+export function logProblem(item: { prompt: string; logLabel?: string }): string {
+  const raw = item.logLabel ?? item.prompt.replace(/^[^:\n]*:\s*/, "");
   const problem = raw
     .replace(/\s+/g, " ") // collapse any wrapping
     .replace(/\|/g, "/") // a pipe would break the field split
     .trim();
-  const short = problem.length > 44 ? `${problem.slice(0, 41)}...` : problem;
-  return `log: ${date} | ${item.standard} | ${short} |  |  | ${item.seed}`;
+  return problem.length > 44 ? `${problem.slice(0, 41)}...` : problem;
+}
+
+function logLine(
+  item: { standard: string; prompt: string; seed: number; logLabel?: string },
+  date: string,
+): string {
+  return `log: ${date} | ${item.standard} | ${logProblem(item)} |  |  | ${item.seed}`;
 }
 
 export function renderKey(session: Session, opts: KeyOptions = {}): string {

@@ -9,6 +9,7 @@
     "faded": "bun run src/cli.ts faded",
     "reminder": "bun run src/cli.ts reminder",
     "sweep": "bun run src/cli.ts sweep",
+    "grade": "bun run src/cli.ts grade",
     "test": "bun test"
   },
   "devDependencies": {
