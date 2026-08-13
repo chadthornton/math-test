@@ -1,13 +1,14 @@
 // 7.EE.A.1 -- combining like terms.
 //
-// brief.md §5:
+// Item parameters. brief.md no longer carries an item-generation section --
+// it became this code -- so this block is the surviving record of it:
 //   form:    ax + b(cx + d) + e
 //   require: b < 0 in >= half of items
 //   error:   distributes b to first term only; combines unlike terms
 //
-// Tier 3 (brief.md §3): procedural, unlocks once tier 1 is solid. RUNG 1 of
-// the tutor progression -- brief.md §11 notes that distributing a negative IS
-// signed arithmetic, which is why this rung sits directly on the root cause.
+// Error signatures (brief.md §5): PARTIAL_DISTRIBUTE, SIGN_DISTRIBUTE, UNLIKE_TERMS
+// Tier 3: the first node below Gate 0 in brief.md §3's graph. Distributing a
+// negative IS signed arithmetic, which is why it sits directly on the gate.
 //
 // The `b < 0 in >= half` requirement is a property of a BATCH, not of any one
 // item, so it is declared as a balance constraint and enforced by
@@ -61,7 +62,7 @@ function generate(rng: RNG): Item {
     `Combine the constants:  ${b * d} ${e >= 0 ? "+" : "-"} ${Math.abs(e)} = ${constant}`,
   ];
 
-  // Three computed distractors, all named in brief.md §5.
+  // Three computed distractors, one per signature in brief.md §5's taxonomy.
   const distractors = [
     {
       value: renderLinear(coefficient, d + e),
@@ -136,7 +137,7 @@ export const generator: Generator = {
   verify,
   balance: {
     label: "negative multiplier outside the parentheses",
-    // brief.md §5: b < 0 in at least half the items.
+    // Item spec: b < 0 in at least half the items.
     holds: (item) => / - \d+\(/.test(item.prompt),
   },
 };

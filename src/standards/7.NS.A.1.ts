@@ -1,13 +1,16 @@
 // 7.NS.A.1 -- signed arithmetic (add/subtract).
 //
-// brief.md §5:
+// Item parameters. brief.md no longer carries an item-generation section --
+// it became this code -- so this block is the surviving record of it:
 //   forms:   a + b | a - b | a - (-b) | -a + b | a - b - c
 //   range:   |a|,|b|,|c| in [2, 20]
 //   require: at least one negative operand
 //   trap:    double negative (a - (-b))
 //   error:   treats a - (-b) as a - b
 //
-// Tier 1 (brief.md §3): root node. Appears in every session.
+// Error signatures (brief.md §5): DOUBLE_NEG, SIGN_RULE, SUBTRACT_ORDER
+// Tier 1: the root of brief.md §3's graph, and half of Gate 0 -- which
+// brief.md §9 runs daily throughout the eleven days, no exceptions.
 //
 // The verifier below deliberately does NOT reuse the arithmetic that produced
 // the item. It re-parses the rendered prompt string and re-evaluates from
@@ -257,7 +260,7 @@ function verify(item: Item): boolean {
   const parsed = parseExpression(item.prompt.slice(DIRECTIVE.length));
   if (!parsed) return false;
 
-  // brief.md §5: two or three terms, magnitudes in range, one negative operand.
+  // Item spec: two or three terms, magnitudes in range, one negative operand.
   if (parsed.operands.length < 2 || parsed.operands.length > 3) return false;
   for (const n of parsed.operands) {
     const mag = Math.abs(n);

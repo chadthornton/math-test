@@ -1,12 +1,14 @@
 // 8.F.A.1 -- function vocabulary.
 //
-// brief.md §5:
+// Item parameters. brief.md no longer carries an item-generation section --
+// it became this code -- so this block is the surviving record of it:
 //   forms:   set of ordered pairs | table | graph description | verbal relation
 //   terms she must produce: input, output, domain, range, function,
 //           vertical line test, relation
 //   error:   believes repeated OUTPUT breaks functionhood (it doesn't)
 //
-// brief.md §7 is specific: the existing material tests whether she can APPLY a
+// Error signatures (brief.md §5): OUTPUT_REPEAT, VLT_MISAPPLY, VOCAB_TERM
+// brief.md §10 is specific: the existing material tests whether she can APPLY a
 // function rule, not whether she knows the WORDS. So every item here asks her
 // to name the reason and to produce the domain and the range, not to evaluate
 // anything.
@@ -240,7 +242,7 @@ function distractor(pairs: readonly Pair[]): string {
     const shared = rangeOf(pairs).find(
       (y) => pairs.filter(([, other]) => other === y).length > 1,
     );
-    // The misconception brief.md §5 names for this standard.
+    // OUTPUT_REPEAT in brief.md §5's taxonomy.
     return trap(
       "Function: no",
       `called it "not a function" because the output ${shared} repeats. A repeated OUTPUT is fine. Only a repeated INPUT with two different outputs breaks it`,

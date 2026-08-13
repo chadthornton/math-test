@@ -1,12 +1,19 @@
 // 5.NBT.B.5 -- multiplication fluency.
 //
-// brief.md §5:
+// Item parameters. brief.md no longer carries an item-generation section --
+// it became this code -- so this block is the surviving record of it:
 //   forms:   2-digit x 1-digit | 2-digit x 2-digit | decimal x decimal
 //   range:   [12, 99]
 //   no calculator; time per item ~= 20s
 //   error:   place value in partial products; decimal place count
 //
-// Tier 1 (brief.md §3): the other root cause. Parent-owned daily drilling.
+// Error signatures (brief.md §5): PLACE_VALUE, CARRY, SLOW
+// Tier 1: the other half of Gate 0 in brief.md §3.
+//
+// NOTE: brief.md §3 now says multiplication automaticity is being handled by
+// a separate drilling tool and should not be duplicated here. This module
+// predates that note and is still registered and still assembled into
+// sessions. Flagged, not resolved.
 //
 // On decimals and the "integer solutions only" global constraint: that rule
 // bars fractional and non-terminating answers, which are a no-calculator
@@ -151,7 +158,7 @@ function generate(rng: RNG): Item {
         : rng.int(ONE_DIGIT_MIN, ONE_DIGIT_MAX),
     );
     // Cap the answer at three places. Two 2-place factors gives four, which
-    // is past the ~20s-per-item budget in brief.md §5.
+    // is past the ~20s-per-item budget in the item spec above.
     const leftPlaces = rng.int(1, 2);
     a = { digits: leftDigits, places: leftPlaces };
     b = { digits: rightDigits, places: leftPlaces === 2 ? 1 : rng.int(1, 2) };
@@ -197,7 +204,7 @@ function verify(item: Item): boolean {
   const b = parseDecimal(printed[1]!);
   if (!a || !b) return false;
 
-  // brief.md §5: digit strings in [12, 99], or a single digit in [2, 9].
+  // Item spec: digit strings in [12, 99], or a single digit in [2, 9].
   for (const factor of [a, b]) {
     if (factor.places > 2) return false;
     // A printed factor must not carry a redundant trailing zero (0.90, 9.0).

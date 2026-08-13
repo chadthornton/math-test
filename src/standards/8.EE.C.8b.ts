@@ -1,12 +1,14 @@
 // 8.EE.C.8b -- systems of equations by SUBSTITUTION.
 //
-// brief.md §5:
+// Item parameters. brief.md no longer carries an item-generation section --
+// it became this code -- so this block is the surviving record of it:
 //   form:    one equation solved for a variable, one not
 //            e.g.  y = 2x - 3  and  4x + 3y = 11
 //   require: substitution is the intended path, NOT equal-values
 //   error:   omits parentheses when substituting; solves for only one variable
 //
-// Tier 4 (brief.md §3), and brief.md §7's highest-priority correction: the
+// Error signatures (brief.md §5): NO_PARENS_SUB, ONE_VAR_ONLY, WRONG_SUB_TARGET
+// Tier 4, and the first correction listed in brief.md §10: the
 // existing practice test teaches the EQUAL-VALUES method (both equations in
 // `y =` form, set them equal) and the teacher specified substitution.
 //
@@ -149,7 +151,7 @@ function verify(item: Item): boolean {
   }
 
   // Exactly one equation is solved for a variable. Two would make this an
-  // equal-values problem, which is the method brief.md §7 says to replace.
+  // equal-values problem, which is the method brief.md §10 says to replace.
   const solved = equations.filter((e) => SOLVED_FORM.test(e));
   if (solved.length !== 1) return false;
 

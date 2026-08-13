@@ -40,8 +40,8 @@ export interface Generator {
   generate(rng: RNG): Item;
   verify(item: Item): boolean; // REQUIRED
   /**
-   * Optional constraint on a BATCH rather than on any single item. spec.md
-   * requires negative coefficients in >= half of items for 7.EE.A.1 and
+   * Optional constraint on a BATCH rather than on any single item. The item
+   * spec requires negative coefficients in >= half of items for 7.EE.A.1 and
    * 7.EE.B.4 -- that is the diagnosed weakness, so leaving it to chance
    * would let a session miss it entirely. generateItems() enforces it.
    */
@@ -213,7 +213,7 @@ export function generateItems(
   }
 
   // Replacements always land at the earliest failing position, which bunches
-  // the balanced items at one end. brief.md §5 rule 5 says do not hand her a
-  // sorted set, so undo the clustering.
+  // the balanced items at one end. brief.md §4 calls for a randomized set, so
+  // undo the clustering.
   return shuffle(items, rng);
 }

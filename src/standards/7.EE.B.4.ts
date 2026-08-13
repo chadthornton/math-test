@@ -1,13 +1,18 @@
 // 7.EE.B.4 -- solving and graphing inequalities.
 //
-// brief.md §5:
+// Item parameters. brief.md no longer carries an item-generation section --
+// it became this code -- so this block is the surviving record of it:
 //   form:    ax + b {<,>,<=,>=} c
 //   require: a < 0 in >= half of items
 //   error:   fails to flip sign; wrong dot fill; wrong arrow direction
 //
-// Tier 3 (brief.md §3). The brief calls the flip rule "negative reasoning",
-// which is why this hangs off signed arithmetic rather than off equation
-// solving.
+// Error signatures (brief.md §5): NO_FLIP, OVER_FLIP, WRONG_ARROW, WRONG_DOT
+// Tier 3. In brief.md §3's graph this sits below variables-on-both-sides,
+// which sits below like terms, which sits on Gate 0.
+//
+// brief.md §5 calls out OVER_FLIP specifically -- flipping the sign when
+// merely adding or subtracting a negative. Half-remembering the rule is its
+// own failure mode, and the distractor below encodes it.
 //
 // All three named errors are graph-level, so the item asks for the graph in
 // words -- dot fill and arrow direction -- not just the solved inequality.
@@ -162,7 +167,7 @@ export const generator: Generator = {
   verify,
   balance: {
     label: "negative coefficient on x",
-    // brief.md §5: a < 0 in at least half the items.
+    // Item spec: a < 0 in at least half the items.
     holds: (item) => /:\s+-\d*x/.test(item.prompt),
   },
 };

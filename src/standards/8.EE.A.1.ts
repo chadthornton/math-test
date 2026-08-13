@@ -1,11 +1,14 @@
 // 8.EE.A.1 -- exponent rules.
 //
-// brief.md §5:
+// Item parameters. brief.md no longer carries an item-generation section --
+// it became this code -- so this block is the surviving record of it:
 //   forms:   x^a * x^b | x^a / x^b | (x^a)^b | x^0 | x^(-a)
 //   range:   a,b in [2, 8]
 //   error:   multiplies exponents when multiplying bases
 //
-// Tier 2 (brief.md §3): cheap, dense, low prerequisite depth. Travel-week work.
+// Error signatures (brief.md §5): MULT_VS_ADD_EXP, ZERO_EXP, NEG_EXP
+// Tier 2: near-independent of Gate 0 in brief.md §3's graph, so it can run
+// early and in parallel with everything else.
 //
 // spec.md's verifier for this standard is "substitute a numeric base into both
 // forms, assert equal". That is done literally below: the printed problem and
@@ -281,7 +284,7 @@ function verify(item: Item): boolean {
 
   const question = item.prompt.slice(DIRECTIVE.length).trim();
 
-  // brief.md §5: exponents live in [2, 8]. 0 and 1 are legal only where the
+  // Item spec: exponents live in [2, 8]. 0 and 1 are legal only where the
   // form itself calls for them (x^0, and x^1 printed as x).
   for (const match of question.matchAll(/\^\(?(-?\d+)\)?/g)) {
     const exponent = Math.abs(Number(match[1]));

@@ -1,11 +1,15 @@
 // 8.EE.A.2 -- square and cube roots.
 //
-// brief.md §5:
+// Item parameters. brief.md no longer carries an item-generation section --
+// it became this code -- so this block is the surviving record of it:
 //   forms:   sqrt(perfect square) | cbrt(perfect cube) | simplify sqrt(n)
 //   n:       has a perfect-square factor >= 4, n <= 200
 //   error:   pulls out a non-maximal factor (sqrt(72) -> 2 sqrt(18))
 //
-// Tier 2 (brief.md §3): travel-week work, no worksheet required.
+// Error signatures (brief.md §5): NON_MAXIMAL_FACTOR, CUBE_VS_SQUARE, PERFECT_SQ_RECALL
+// Tier 2: near-independent of Gate 0 in brief.md §3's graph. (The earlier
+// "travel week, no worksheets" framing is gone -- brief.md §1 now says
+// printer access is available throughout.)
 //
 // NOTE on the verifier. spec.md gives it as `coeff^2 x radicand === original`.
 // That check passes for 2 sqrt(18) against sqrt(72) -- 4 x 18 = 72 -- which is
@@ -199,7 +203,7 @@ function verify(item: Item): boolean {
     // The half spec.md leaves out. Without this, 2 sqrt(18) verifies against
     // sqrt(72) and the answer key ships the misconception.
     if (!isSquarefree(answer.radicand)) return false;
-    // brief.md §5: the simplify form needs a perfect-square factor >= 4.
+    // Item spec: the simplify form needs a perfect-square factor >= 4.
     if (answer.radicand !== 1 && answer.coefficient < 2) return false;
     if (answer.radicand === 1 && !isPerfectSquare(original)) return false;
   }

@@ -1,12 +1,14 @@
 // 8.F.B.4 -- linear word problems.
 //
-// brief.md §5:
+// Item parameters. brief.md no longer carries an item-generation section --
+// it became this code -- so this block is the surviving record of it:
 //   form:    story -> define variable -> write equation -> solve -> sentence
 //            with units
 //   require: rate + starting value clearly extractable
 //   error:   attaches rate to wrong slot; stops at the number; omits units
 //
-// Tier 4 (brief.md §3): compound, requires everything above, tutor-owned.
+// Error signatures (brief.md §5): RATE_SLOT, STOPPED_AT_NUMBER, NO_UNITS, NO_VAR_DEF
+// Tier 4: the bottom of brief.md §3's graph -- it requires every node above.
 //
 // This is the one standard where the PROMPT is a template rather than a
 // computed string -- a story has to be written by a human once. Everything the

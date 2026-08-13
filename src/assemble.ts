@@ -1,14 +1,18 @@
-// Session builder. Enforces the assembly rules in brief.md §5:
+// Session builder. The assembly rules it enforces:
 //
-//   1. Pick 12-14 items.
+//   1. Pick 12-14 items.                          brief.md §4, interleaved set
 //   2. Never two consecutive items from the same standard.
-//   3. Tier 1 appears in EVERY session regardless of plan.
-//   4. Include >= 2 items she missed in a prior session (spaced recall).
-//   5. Randomize order after selection. Do not sort by difficulty.
+//   3. Tier 1 appears in EVERY session.           brief.md §9, Gate 0 daily
+//   4. Include >= 2 items she missed before (spaced recall).
+//   5. Randomize order after selection.           brief.md §4, "randomized"
+//
+// Rules 2 and 4 came from the item-generation section of an earlier brief and
+// are not restated in the current one. They are kept: rule 2 is what
+// "interleaved" means operationally, and rule 4 is the only mechanism that
+// re-drills something she actually got wrong.
 //
 // Rule 3 is taken literally: `--tier 2` still yields a tier-1 item, because
-// signed arithmetic and multiplication are the root causes and the brief says
-// they appear regardless of what else the session is for.
+// Gate 0 runs daily throughout regardless of what else a session is for.
 //
 // Rule 4 is honest about its limit. The log records the problem as text, not
 // the seed that produced it, so an exact past item cannot be reconstructed.
@@ -24,8 +28,14 @@ export const SESSION_MIN = 12;
 export const SESSION_MAX = 14;
 
 // ---------------------------------------------------------------------------
-// log.md -- brief.md §10 format:
-//   DATE | STANDARD | PROBLEM AS GIVEN | WHAT SHE WROTE | got stuck/wrong/slow
+// log.md -- brief.md §8 format:
+//   DATE | STANDARD | PROBLEM AS GIVEN | WHAT SHE WROTE | SIGNATURE
+//
+// Field 5 changed meaning. It used to be a free-text outcome ("wrong, no
+// flip"); brief.md §8 now writes it as an error signature drawn from §5's
+// taxonomy (NO_FLIP, PARTIAL_DISTRIBUTE, SLOW, ...). The parser below reads
+// all five fields either way, but misses() still classifies on the old free
+// text -- see the note there.
 // ---------------------------------------------------------------------------
 
 export interface LogEntry {
@@ -86,11 +96,19 @@ export function parseLog(text: string): LogEntry[] {
 }
 
 /**
- * A miss is wrong or stuck. brief.md §10 distinguishes "slow, not wrong" and
- * asks that later successes be logged too -- neither is a miss to re-drill.
+ * A miss is wrong or stuck.
  *
- * The negation has to be stripped first. "slow, not wrong" is the brief's own
- * example, and a bare search for "wrong" counts it as a miss.
+ * KNOWN GAP, not fixed here: brief.md §8 now writes field 5 as an error
+ * SIGNATURE from §5's taxonomy (NO_FLIP, PARTIAL_DISTRIBUTE, SLOW, ...)
+ * rather than as free text. This matcher still looks for the words "wrong" or
+ * "stuck", so a log written in the current format classifies as ZERO misses
+ * and `--from-log` silently degrades to an ordinary session. Fixing it means
+ * matching against the taxonomy and treating SLOW as not-a-miss, which is a
+ * behaviour change rather than a documentation one.
+ *
+ * The negation strip below is for the older free-text format: "slow, not
+ * wrong" was the brief's own example, and a bare search for "wrong" counts it
+ * as a miss.
  */
 export function misses(entries: readonly LogEntry[]): LogEntry[] {
   return entries.filter((e) => {
@@ -123,7 +141,7 @@ export interface AssembleResult {
 
 const tierOf = (s: Standard): Tier => REGISTRY[s]!.tier;
 
-/** How many exact re-drills brief.md §5 rule 4 asks for. */
+/** How many exact re-drills the spaced-recall rule asks for. */
 const RECALL_TARGET = 2;
 
 /**
@@ -287,7 +305,7 @@ export function assemble(opts: AssembleOptions): AssembleResult {
   const count = opts.count ?? 13;
   if (count < SESSION_MIN || count > SESSION_MAX) {
     notes.push(
-      `Session is ${count} items; brief.md §5 asks for ${SESSION_MIN}-${SESSION_MAX}.`,
+      `Session is ${count} items; brief.md §4 asks for ${SESSION_MIN}-${SESSION_MAX}.`,
     );
   }
 
@@ -295,7 +313,7 @@ export function assemble(opts: AssembleOptions): AssembleResult {
   const tiers = opts.tiers;
   const candidates = requested.filter((s) => {
     if (!REGISTRY[s]) return false;
-    // Tier 1 is always eligible -- brief.md §5 rule 3.
+    // Tier 1 is always eligible -- Gate 0 runs daily (brief.md §9).
     return !tiers || tiers.includes(tierOf(s)) || tierOf(s) === 1;
   });
   if (candidates.length === 0) throw new Error("no generators match that selection");

@@ -1,11 +1,14 @@
 // 8.EE.C.7b -- linear equations with variables on both sides.
 //
-// brief.md §5:
+// Item parameters. brief.md no longer carries an item-generation section --
+// it became this code -- so this block is the surviving record of it:
 //   form:    ax + b = cx + d,  a != c
 //   require: integer solution; negative coefficients present
 //   error:   sign error moving terms across
 //
-// Tier 3 (brief.md §3), RUNG 2 of the tutor progression.
+// Error signatures (brief.md §5): SIGN_MOVE, COLLECT_WRONG_SIDE
+// Tier 3. brief.md §3's graph puts this directly below like terms, and
+// directly above both inequalities and substitution.
 //
 // The named error has to produce an INTEGER wrong answer or it is useless as
 // a distractor -- she would spot a fraction immediately. So b is drawn as a
@@ -35,7 +38,7 @@ function generate(rng: RNG): Item {
   const multiple = nonZero(rng, -4, 4);
   const b = gap * multiple;
 
-  // Bias c negative -- brief.md §5 wants negative coefficients present.
+  // Bias c negative -- the item spec wants negative coefficients present.
   const c = rng.bool(0.6) ? rng.int(-6, -1) : rng.int(1, 6);
   const a = c + gap;
   const solution = rng.int(-9, 9);
@@ -101,7 +104,7 @@ function verify(item: Item): boolean {
   if (leftSlope === null || rightSlope === null) return false;
   if (leftSlope === rightSlope) return false;
 
-  // brief.md §5: negative coefficients present.
+  // Item spec: negative coefficients present.
   if (!/-/.test(equation)) return false;
 
   // Variables must genuinely appear on both sides.

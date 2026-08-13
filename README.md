@@ -4,14 +4,6 @@ Verified, interleaved practice sets for the algebra placement retake.
 Solutions are **computed and re-verified, never authored**.
 
 - `brief.md` — the domain reference. Standards, diagnosis, item parameters, progression.
-- `spec.md` — the build spec. Stack, data model, verification rules, build order.
-
-### A note on the brief's filename
-
-The brief is referred to by three names across the source documents — its
-companion-doc line calls it `algebra-retake-brief.md`, the stack tree calls it
-`brief.md`, and it arrived as `algebraretakebrief.md`. **They are all the same
-document.** It lives here as `brief.md`. There is no second brief to find.
 
 ---
 
@@ -33,7 +25,7 @@ document.** It lives here as `brief.md`. There is no second brief to find.
 | 1 — root causes, daily | `7.NS.A.1` `5.NBT.B.5` |
 | 2 — cheap, travel week | `8.EE.A.1` `8.EE.A.2` `8.F.A.1` |
 | 3 — procedural | `7.EE.A.1` `7.EE.B.4` `8.EE.C.7b` |
-| 4 — compound, tutor | `8.EE.C.8b` `8.F.B.4` |
+| 4 — compound | `8.EE.C.8b` `8.F.B.4` |
 
 Nothing from the non-goals list is present: no UI, no auth, no database, no
 adaptive difficulty, no spaced-repetition engine, no LaTeX. Output is
@@ -63,7 +55,7 @@ taken can be regenerated exactly — for the tutor, or to diff two sessions.
 ```
 brief.md                  domain reference
 spec.md                   build spec
-log.md                    error log (brief.md §10 format)
+log.md                    error log (brief.md §8 format)
 src/
   generate.ts             seeded RNG, data model, generate/verify loop
   assemble.ts             session builder + log.md parser
@@ -154,6 +146,5 @@ assembler says so in its notes rather than silently downgrading.
 
 ## Known limits
 
-**Tier 1 appears even when you ask for tier 2 only.** brief.md §5 rule 3 says
-tier 1 appears in every session *regardless of plan*, so `--tier 2` still yields
-a tier-1 item. This is intentional.
+**Tier 1 appears even when you ask for tier 2 only.** brief.md §9 runs Gate 0
+daily throughout, so `--tier 2` still yields a tier-1 item. This is intentional.
