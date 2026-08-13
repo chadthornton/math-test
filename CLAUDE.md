@@ -5,14 +5,11 @@ retake. TypeScript + Bun, no framework, markdown to stdout or file.
 
 ## Read these first
 
-- `brief.md` — the domain reference. Standards, diagnosis, item parameters (§5),
-  the error-log format (§10), the tutor progression (§11). **This is the source
-  of truth for anything pedagogical.**
+- `brief.md` — the domain reference. Standards and diagnosis (§3), exercise
+  types (§4), the error-signature taxonomy (§5), progress states and the gate
+  criterion (§7), the error-log format (§8), the day-by-day plan (§9). **This is
+  the source of truth for anything pedagogical.**
 - `spec.md` — the build spec. Data model, per-standard verifier rules, non-goals.
-
-The brief is called `algebra-retake-brief.md` in spec.md's companion-doc line and
-`brief.md` in its file tree. Same document. It lives here as `brief.md`. There is
-no second brief.
 
 ## The one rule that matters
 
@@ -66,16 +63,19 @@ duplicating one thing across several call sites.
 - **The student sheet never names the standard.** brief.md §4: a heading that
   tells you the procedure is exactly what blocked practice trains, and the retake
   is interleaved. Standards, tiers and seeds go on the answer key only.
-- **Distractors are computed too**, not written. Format: `` `wrong` -- what
-  choosing it means ``. Build them from the misconception brief.md §5 names for
-  that standard, and never ship one equal to the correct answer.
+- **A distractor's value is computed; its explanation is authored.** Format:
+  `` `wrong` -- what choosing it means ``. Derive the wrong value from the error
+  signature brief.md §5 names for that standard, and never ship one equal to the
+  correct answer. Read "Authored vs. generated" below before touching the
+  explanation text — it is prose, and prose is not generated here.
 - Per-item seeds: each item draws its own seed, so `generate(new RNG(item.seed))`
   reproduces it exactly. This is what `--from-log` spaced recall depends on.
 
 ## Adding a standard
 
 1. `src/standards/<code>.ts` exporting `{ standard, tier, generate, verify }`.
-2. Verify by re-reading the printed text. Check brief.md §5 constraints too.
+2. Verify by re-reading the printed text. Check the item parameters recorded in
+   the module header, and the signatures in brief.md §5.
 3. Register it in `src/registry.ts`.
 4. Tests in `src/standards.test.ts` — the `describe.each(BUILT)` block covers the
    shared contract automatically; add cases for the named misconception.
@@ -90,10 +90,10 @@ duplicating one thing across several call sites.
   the radicand is squarefree. There is a test.
 - **Decimal products are allowed** despite "integer solutions only". That rule
   bars fractions and non-terminating answers; `decimal × decimal` is an explicit
-  form in brief.md §5 and decimal place count is its named misconception. All
+  form in the item spec and decimal place count is its named misconception. All
   decimal arithmetic is done in integers with the point placed afterwards.
-- **Tier 1 appears even under `--tier 2`.** brief.md §5 rule 3: tier 1 appears in
-  every session *regardless of plan*.
+- **Tier 1 appears even under `--tier 2`.** brief.md §9 runs Gate 0 daily
+  throughout, regardless of what else a session is for.
 - **`8.F.B.4` stories are hand-written templates.** Prose cannot be computed. All
   numbers, the model, the solution and the sentence still are, and the verifier
   checks every number in the model appears in the story.
@@ -103,3 +103,164 @@ duplicating one thing across several call sites.
 Web UI, dashboards, progress visualizations, auth, accounts, multi-user, a
 database of any kind, adaptive difficulty, a real spaced-repetition
 implementation, LaTeX/KaTeX rendering. Flat files only.
+
+---
+
+# Consolidated from spec.md and the pre-build handoff
+
+*Both are retired — see the last section. `brief.md` is not, and takes
+precedence over this file on any pedagogy question.*
+
+## Authored vs. generated
+
+**Two content classes. Never blur them.**
+
+| | Authored | Generated |
+|---|---|---|
+| What | reminder prose, trap explanations, DAG edges, standard metadata | items, sessions, sheets, progress |
+| Written by | human, verified once | machine |
+| Checked by | review | verifiers |
+| Regenerated | **never** | freely |
+
+A generated *item* can be mechanically verified — re-derive the answer from the
+printed text and assert. A generated *explanation* cannot. There is no test that
+catches a confidently wrong statement of the inequality flip rule, and that is
+exactly the artifact she would study from.
+
+**So: the tool may select, rank, and order authored prose. It may never write
+it.**
+
+This extends the existing computed-not-authored rule from answers to
+explanations. Same principle, and the failure is quieter because nothing throws.
+
+**Where this lands on distractors.** A distractor has two parts and they fall on
+opposite sides of the table. The wrong *value* is computed — `8.EE.A.2` derives
+`2 sqrt(18)` from the item's own coefficient rather than having it typed in. The
+*explanation* beside it is authored prose with computed numbers dropped into
+fixed slots: a human wrote and verified the sentence, and the machine only fills
+the blanks. That is the intended arrangement. Do not let a later change start
+generating the sentence itself.
+
+## Operations map
+
+Seven concerns. Four are built; three are not.
+
+```
+  CATALOG ──┬──► GENERATE ──► ASSEMBLE ──► RENDER ──► [paper]
+            │                    ▲                       │
+            │                    │                       ▼
+            │                 DERIVE ◄── CAPTURE ◄── [her answers]
+            │                    │
+            └──────► ADVISE ◄────┘
+```
+
+| Operation | State |
+|---|---|
+| CATALOG — standards, signatures, item parameters | built |
+| GENERATE — parameterized items + verifiers | built |
+| ASSEMBLE — interleaving, spaced recall | built |
+| RENDER — printable output | built |
+| CAPTURE — log intake | **manual paste only** |
+| DERIVE — progress state from log | **not built** |
+| ADVISE — what to work on next | **not built** |
+
+Do not build DERIVE or ADVISE until `log.md` has at least a week of real
+entries. They are functions of data that does not exist yet, and guessing at
+their shape now will produce the wrong shape.
+
+> **UNRESOLVED — ask before building either.** The non-goals list above forbids
+> "adaptive difficulty" and "a real spaced-repetition implementation". ADVISE
+> ("what to work on next") overlaps both, and DERIVE feeds it. Both statements
+> are recorded here as they stand rather than reconciled by guesswork. This
+> needs a ruling, not an inference.
+
+Two notes on CATALOG's "built": item parameters live in the standard modules,
+but the error signatures exist only as comments. There is no `Signature` type
+and nothing validates a signature string.
+
+## Logging protocol
+
+`log.md` is the source of truth for everything downstream. Append-only. Never
+rewrite it, never let a tool edit past entries.
+
+Every answer key prints a paste-ready line with the seed pre-filled:
+
+```
+log: 2026-08-13 | 7.NS.A.1 | -4 + 11 |  |  | 3277083196
+```
+
+Fill the two blank fields as:
+
+```
+field 4   what she actually wrote, verbatim
+field 5   an error signature from brief.md §5
+```
+
+**Verbatim matters.** `x > -3` names one missing rule. `struggled with
+inequalities` could be the flip rule, the arrow, the dot, or the underlying
+equation solving — four different fixes, and the entry is worthless for all of
+them.
+
+**Signatures come from the taxonomy in `brief.md` §5** — `NO_FLIP`,
+`PARTIAL_DISTRIBUTE`, `NON_MAXIMAL_FACTOR`, and so on. If a genuinely new
+failure mode appears, add it to the taxonomy in `brief.md` first, then use it.
+Never put free text where a signature belongs.
+
+**Also log correct answers on previously-missed types.** That is the only signal
+that a gate is closing.
+
+**Known gap:** `misses()` in `src/assemble.ts` still classifies field 5 by
+searching for the words *wrong* or *stuck*, which was the previous free-text
+format. A log written with signatures reads as zero misses and `--from-log`
+degrades silently to an ordinary session. Fixing it is a behaviour change, not a
+documentation one, and has not been done.
+
+### Deferred: predicted errors
+
+A later upgrade, not a blocker. Items would carry the wrong answers each known
+misconception produces:
+
+```ts
+predictedErrors: Record<Signature, string>
+// -3x + 2 > 11  ->  { NO_FLIP: "x > -3", SIGN_MOVE: "x < -13/3" }
+```
+
+Grading then classifies automatically instead of requiring judgment, and logging
+friction approaches zero — which is what makes logging survive a real week. **Do
+not build this before real entries exist.** The predicted-error tables should be
+derived from failures she actually makes, not from failures we imagine.
+
+## Progress states
+
+For when DERIVE gets built. Definitions live in `brief.md` §7.
+
+```
+NOT_STARTED · SHAKY (<60%) · CLOSE (>=60%, gate unmet) · GATED
+```
+
+**Gate:** 4 of 5 consecutive correct, work shown, **on two different dates.**
+The two-dates clause is the important half — same-session success is usually
+recognition, not retention.
+
+**A node drops back to SHAKY on any miss inside an interleaved set, regardless
+of prior state.** Passing blocked and failing mixed is the exact failure this
+whole project exists to correct, and it must be visible rather than averaged
+away.
+
+## What stays outside the repo
+
+Diagnosis. When a signature keeps firing after the sheet was re-ranked, or a
+gated node fails in a mixed set, that is a judgment call about what it means and
+what to change.
+
+The tool records and reports. It does not decide.
+
+## Retired documents
+
+- `spec.md` — implemented. Its invariants are in this file and its item
+  parameters became code. Deleted; not authoritative.
+- The pre-build handoff — described work already done. It was a chat artifact
+  and was never committed to this repo, so there was no `HANDOFF.md` to delete.
+  Its surviving content is above.
+
+`brief.md` is not retired and is not superseded by code.
