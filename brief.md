@@ -80,7 +80,7 @@ inequal.  substitution
 
 **Signed arithmetic is the root.** Several downstream nodes partially resolve once it's automatic. Function vocabulary hangs off nothing — it's definitions, and likely the cheapest points on the board.
 
-> **Note:** multiplication automaticity is being addressed as a separate drilling tool. Don't duplicate that work here. This brief assumes Gate 0's multiplication half is handled elsewhere and focuses on signed arithmetic.
+> **Note:** multiplication **automaticity** — the 1–10 times table — is being addressed as a separate drilling app. Don't duplicate that work here. The multi-digit **algorithm** (2-digit × 1-digit and up) is a different skill: it is a written procedure whose failure mode is place value in the partial products, so it belongs on paper with the work shown, and the generator does produce it. This brief assumes recall is handled elsewhere and focuses on signed arithmetic.
 
 ---
 

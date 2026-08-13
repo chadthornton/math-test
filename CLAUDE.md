@@ -98,8 +98,11 @@ avoid duplicating one thing across several call sites.
 ## Non-goals — do not build
 
 Web UI, dashboards, progress visualizations, auth, accounts, multi-user, a
-database of any kind, adaptive difficulty, a real spaced-repetition
-implementation, LaTeX/KaTeX rendering. Flat files only.
+database of any kind, a real spaced-repetition implementation (SM-2 style
+interval scheduling), LaTeX/KaTeX rendering. Flat files only.
+
+*Adaptive difficulty was on this list and was removed by ruling on Aug 13 —
+see the operations map below.*
 
 ---
 
@@ -165,11 +168,16 @@ Do not build DERIVE or ADVISE until `log.md` has at least a week of real
 entries. They are functions of data that does not exist yet, and guessing at
 their shape now will produce the wrong shape.
 
-> **UNRESOLVED — ask before building either.** The non-goals list above forbids
-> "adaptive difficulty" and "a real spaced-repetition implementation". ADVISE
-> ("what to work on next") overlaps both, and DERIVE feeds it. Both statements
-> are recorded here as they stand rather than reconciled by guesswork. This
-> needs a ruling, not an inference.
+> **RULED (Chad, Aug 13): adaptive difficulty is wanted.** It has been removed
+> from the non-goals list. DERIVE and ADVISE are therefore in scope to build.
+>
+> The deferral above still stands, and it is empirical rather than policy:
+> both are functions of logged data, and guessing their shape before the data
+> exists produces the wrong shape. Build them when `log.md` has real entries.
+>
+> A *real spaced-repetition implementation* (SM-2 style interval scheduling)
+> remains a non-goal and is a different thing: brief.md §9 is a fixed
+> eleven-day plan, not an open-ended review schedule.
 
 Two notes on CATALOG's "built": item parameters live in the standard modules,
 but the error signatures exist only as comments. There is no `Signature` type
